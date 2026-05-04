@@ -24,9 +24,9 @@ Signals that are not exposed through Azure Resource Graph are outside the scope 
 | 5 | **Identity & Access** | 5 | 3 | Disable local auth, Managed Identity coverage, RBAC analysis |
 | 6 | **Network & Security** | 12 | 14 | Private endpoints, network injection mode, CMK, Key Vault hardening, VNets, NSGs, Firewall, WAF, Private DNS, Bastion, APIM, Defender, Sentinel |
 | 7 | **Policy & Compliance** | 3 | 2 | AI policy assignments and compliance state |
-| 8 | **Cost & Operations** | 5 | 2 | Multi-region foundry and Container Apps Dynamic Sessions |
+| 8 | **Cost & Operations** | 5 | 1 | Multi-region foundry |
 | 9 | **Monitoring & Operations** | 5 | 4 | App Insights, diagnostics coverage, metric alerts, LAW routing |
-|   | **Total** | **50** | **41** | 41 automated ARG queries |
+|   | **Total** | **50** | **40** | 40 automated ARG queries |
 
 For the full list of queries with their IDs and descriptions, see [queries.md](queries.md).
 

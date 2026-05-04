@@ -2,7 +2,7 @@
 
 All queries executed by the AI Platform Readiness Assessment workbook. This file is auto-generated from the workbook source by `scripts/build-workbook.py`.
 
-**Total: 41 queries** (41 ARG).
+**Total: 40 queries** (40 ARG).
 
 ## Foundry Inventory
 
@@ -79,7 +79,6 @@ All queries executed by the AI Platform Readiness Assessment workbook. This file
 | Query ID | Query Name | Type | Description |
 |----------|-----------|------|-------------|
 | OPS-001 | Foundry Multi-Region Presence | ARG | Foundry accounts deployed across multiple regions for BCDR. |
-| OPS-002 | Container Apps Dynamic Sessions | ARG | Isolated, ephemeral execution environments for AI agent code execution. |
 
 ## Monitoring & Operations
 

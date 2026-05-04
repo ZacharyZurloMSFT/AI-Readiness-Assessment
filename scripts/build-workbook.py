@@ -789,16 +789,6 @@ def cost_ops_group() -> dict:
 | where type == 'microsoft.cognitiveservices/accounts' and kind =~ 'AIServices'
 | summarize accountCount = count() by location
 | order by accountCount desc"""),
-
-        query_header("OPS-002", "Container Apps Dynamic Sessions",
-                     "Isolated, ephemeral execution environments for AI agent code execution."),
-        arg_query("OPS-002", "Container Apps Session Pools",
-                  """resources
-| where type =~ 'microsoft.app/sessionpools'
-| extend containerType = tostring(properties.containerType),
-         poolMgmtType = tostring(properties.poolManagementType)
-| project name, containerType, poolMgmtType, location, subscriptionId""",
-                  no_data="No Container Apps session pools found. Use Dynamic Sessions for sandboxed agent code execution."),
     ]
     return group_section("Cost & Operations", items, name="ops-group")
 
