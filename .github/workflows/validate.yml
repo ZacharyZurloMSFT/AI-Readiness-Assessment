@@ -42,16 +42,16 @@ jobs:
           wb = json.load(open('workbook/ai-readiness-assessment.workbook'))
           content = json.dumps(wb)
           required = [
-              'FDY-001','FDY-002','FDY-003','FDY-004',
+              'FDY-001','FDY-002',
               'DMG-001','DMG-002','DMG-003','DMG-004','DMG-005','DMG-006','DMG-007','DMG-008',
               'RCE-001','RCE-002','RCE-003','RCE-004','RCE-005',
-              'RAI-001','RAI-002','RAI-003','RAI-004','RAI-005','RAI-006',
-              'IAM-001','IAM-002','IAM-003','IAM-004','IAM-005','IAM-006','IAM-007',
+              'RAI-001',
+              'IAM-001','IAM-002','IAM-003',
               'SEC-001','SEC-002','SEC-003','SEC-004','SEC-005','SEC-006','SEC-007','SEC-008',
-              'SEC-009','SEC-010','SEC-011','SEC-012','SEC-013','SEC-014','SEC-015',
-              'POL-001','POL-002','POL-003','POL-004','POL-005',
-              'OPS-001','OPS-002','OPS-003','OPS-004',
-              'MON-001','MON-002','MON-003','MON-004','MON-005','MON-006'
+              'SEC-009','SEC-010','SEC-011','SEC-012','SEC-013','SEC-014',
+              'POL-001','POL-002',
+              'OPS-001','OPS-002',
+              'MON-001','MON-002','MON-003','MON-004'
           ]
           missing = [tid for tid in required if tid not in content]
           if missing:

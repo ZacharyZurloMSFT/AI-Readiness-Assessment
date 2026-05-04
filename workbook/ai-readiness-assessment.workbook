@@ -153,7 +153,7 @@
           {
             "type": 1,
             "content": {
-              "json": "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Inventory of Microsoft Foundry resources and projects. Foundry is identified as <code>microsoft.cognitiveservices/accounts</code> with <code>kind = AIServices</code>. Connections and capability host rows are informational because Basic-tier Foundry uses service-managed backing resources that are not consistently represented as Azure Resource Graph child resources.</div>"
+              "json": "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Inventory of Microsoft Foundry resources and projects. Foundry is identified as <code>microsoft.cognitiveservices/accounts</code> with <code>kind = AIServices</code>.</div>"
             },
             "name": "fdy-description"
           },
@@ -294,56 +294,6 @@
               }
             },
             "name": "fdy-002-query"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>FDY-003</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Connections</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>ARG-indexed Foundry connections. Basic-tier service-managed connections may not appear here.</span></div>"
-            },
-            "name": "fdy-003-header"
-          },
-          {
-            "type": 3,
-            "content": {
-              "version": "KqlItem/1.0",
-              "query": "resources\n| where type =~ 'microsoft.cognitiveservices/accounts/connections'\n    or type =~ 'microsoft.cognitiveservices/accounts/projects/connections'\n| extend category = tostring(properties.category),\n         target = tostring(properties.target),\n         authType = tostring(properties.authType)\n| project name, category, target, authType, subscriptionId\n| order by category asc, name asc",
-              "size": 3,
-              "title": "Foundry Connections",
-              "queryType": 1,
-              "resourceType": "microsoft.resourcegraph/resources",
-              "crossComponentResources": [
-                "{Subscription}"
-              ],
-              "visualization": "table",
-              "noDataMessage": "No Foundry connections indexed in Azure Resource Graph. NextGen Foundry project connections are not reliably exposed in ARG. Verify connections in the Foundry portal or via: GET https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}/projects/{project}/connections?api-version=2025-05-15-preview",
-              "noDataMessageStyle": 4
-            },
-            "name": "fdy-003-query"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>FDY-004</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Capability Hosts (Agent Service)</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>ARG-indexed capability hosts for Standard tier resource wiring; Basic-tier Agent Service may not expose these.</span></div>"
-            },
-            "name": "fdy-004-header"
-          },
-          {
-            "type": 3,
-            "content": {
-              "version": "KqlItem/1.0",
-              "query": "resources\n| where type =~ 'microsoft.cognitiveservices/accounts/capabilityhosts'\n    or type =~ 'microsoft.cognitiveservices/accounts/projects/capabilityhosts'\n| extend storageConn = tostring(properties.storageConnections),\n         vectorStoreConn = tostring(properties.vectorStoreConnections),\n         threadConn = tostring(properties.threadStorageConnections),\n         capabilityKind = tostring(properties.capabilityHostKind),\n         provisioningState = tostring(properties.provisioningState)\n| project name, capabilityKind, provisioningState, storageConn, vectorStoreConn, threadConn, subscriptionId",
-              "size": 3,
-              "title": "Capability Hosts",
-              "queryType": 1,
-              "resourceType": "microsoft.resourcegraph/resources",
-              "crossComponentResources": [
-                "{Subscription}"
-              ],
-              "visualization": "table",
-              "noDataMessage": "No capability hosts found. Capability hosts are provisioned on Standard tier Foundry deployments only. If you are on the Basic tier, agents still function but without explicit capability host resources &#x2014; this result is expected for Basic tier deployments.",
-              "noDataMessageStyle": 4
-            },
-            "name": "fdy-004-query"
           }
         ]
       },
@@ -760,48 +710,16 @@
           {
             "type": 1,
             "content": {
-              "json": "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Microsoft Foundry guardrails are <strong>RAI policies</strong> that wrap every model deployment and agent. Every Foundry deployment automatically inherits the built-in <code>Microsoft.Default</code> policy (Hate, Sexual, Self-Harm, Violence at medium severity, plus Jailbreak and Indirect-Attack shields). Custom policies layer additional controls (Protected Material, Groundedness, Custom Categories, etc.) and tighter severity thresholds. Custom policy inventory is a manual/API check because RAI policy child resources are not consistently indexed in Azure Resource Graph.</div>"
+              "json": "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Microsoft Foundry guardrails are <strong>RAI policies</strong> that wrap every model deployment and agent. Every Foundry deployment automatically inherits the built-in <code>Microsoft.Default</code> policy (Hate, Sexual, Self-Harm, Violence at medium severity, plus Jailbreak and Indirect-Attack shields). This pillar only shows guardrail feature signals available through Azure Resource Graph.</div>"
             },
             "name": "rai-description"
           },
           {
             "type": 1,
             "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RAI-001</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Guardrail Policies</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Custom RAI (guardrail) policies defined on Foundry accounts &#x2014; layered on top of Microsoft.Default.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Custom RAI policy child resources are not consistently indexed in Azure Resource Graph for Foundry Basic and other NextGen configurations. Verify policies through the management API:<br/><code>GET https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}/raiPolicies?api-version=2024-10-01</code></div>"
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RAI-001</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Guardrail Feature Coverage</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Built-in safety features available on each Foundry account (jailbreak, prompt shield, groundedness, agent safety, etc.).</span></div>"
             },
             "name": "rai-001-header"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RAI-002</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Content Filter Capability</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Foundry accounts with the RaiMonitor capability available (required for guardrail enforcement at runtime).</span></div>"
-            },
-            "name": "rai-002-header"
-          },
-          {
-            "type": 3,
-            "content": {
-              "version": "KqlItem/1.0",
-              "query": "resources\n| where type =~ 'microsoft.cognitiveservices/accounts' and kind =~ 'AIServices'\n| extend caps = properties.capabilities\n| mv-expand cap = caps\n| where tostring(cap.name) == 'RaiMonitor'\n| project name, kind, resourceGroup, subscriptionId, raiMonitor = 'Available'",
-              "size": 3,
-              "title": "Foundry Content Filter Capability",
-              "queryType": 1,
-              "resourceType": "microsoft.resourcegraph/resources",
-              "crossComponentResources": [
-                "{Subscription}"
-              ],
-              "visualization": "table",
-              "noDataMessage": "No Foundry accounts expose the RaiMonitor capability. Default Microsoft.Default guardrails still apply at the model API level.",
-              "noDataMessageStyle": 4
-            },
-            "name": "rai-002-query"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RAI-003</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Guardrail Feature Coverage</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Built-in safety features available on each Foundry account (jailbreak, prompt shield, groundedness, agent safety, etc.).</span></div>"
-            },
-            "name": "rai-003-header"
           },
           {
             "type": 3,
@@ -819,28 +737,7 @@
               "noDataMessage": "No Foundry guardrail features detected.",
               "noDataMessageStyle": 4
             },
-            "name": "rai-003-query"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RAI-004</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Per-Deployment Guardrail Assignment</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Verify which guardrail policy is bound to each model deployment and agent.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Model deployments are not reliably indexed in Azure Resource Graph. Use the management API per Foundry account:<br/><code>GET https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}/deployments?api-version=2024-10-01</code><br/>Inspect <code>properties.raiPolicyName</code> on each deployment. <code>Microsoft.Default</code> = built-in; anything else = custom guardrail. Agents inherit the policy from the underlying model deployment unless overridden in the agent definition.</div>"
-            },
-            "name": "rai-004-header"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RAI-005</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Guardrail Policy Controls Detail</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Inspect the actual risks, severity thresholds, and intervention points configured on each custom policy.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> <code>GET https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}/raiPolicies/{policy}?api-version=2024-10-01</code><br/>Review <code>properties.contentFilters</code> for filter category (Hate, Sexual, Violence, Self-Harm, Jailbreak, Protected Material, Groundedness, Custom Categories), <code>severityThreshold</code>, and <code>source</code> (Prompt vs Completion).</div>"
-            },
-            "name": "rai-005-header"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RAI-006</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Red Teaming Runs</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Check for completed red teaming runs and Attack Success Rate (ASR) metrics.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Use Foundry portal or API to verify red teaming runs.<br/><code>GET https://{account}.services.ai.azure.com/api/projects/{project}/redteams/runs?api-version=2025-05-01</code></div>"
-            },
-            "name": "rai-006-header"
+            "name": "rai-001-query"
           }
         ]
       },
@@ -858,7 +755,7 @@
           {
             "type": 1,
             "content": {
-              "json": "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Identity and access posture for Foundry resources. Includes RBAC analysis, key-based auth detection, and manual callouts for Conditional Access, MFA, PIM, and Entra Agent ID inventory.</div>"
+              "json": "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Identity and access posture for Foundry resources. Includes RBAC analysis, managed identity coverage, and key-based auth detection.</div>"
             },
             "name": "iam-description"
           },
@@ -971,34 +868,6 @@
               "noDataMessageStyle": 4
             },
             "name": "iam-003-query"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>IAM-004</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Conditional Access Policies</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Risk-based Conditional Access for Foundry portal and APIs.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Conditional Access state lives in Microsoft Entra ID and is not surfaced in Azure Resource Graph. Review via Entra portal or Microsoft Graph:<br/><code>GET https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies</code></div>"
-            },
-            "name": "iam-004-header"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>IAM-005</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Multi-Factor Authentication</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; MFA enforcement for users accessing Foundry.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Verify via Microsoft Graph sign-in logs and authentication strength policies:<br/><code>GET https://graph.microsoft.com/v1.0/policies/authenticationStrengthPolicies</code></div>"
-            },
-            "name": "iam-005-header"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>IAM-006</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Privileged Identity Management</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Just-in-time elevation for Foundry administrative roles.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Inspect PIM eligible / active assignments for Cognitive Services Contributor / Azure AI Developer:<br/><code>GET https://graph.microsoft.com/v1.0/roleManagement/directory/roleAssignmentScheduleInstances</code></div>"
-            },
-            "name": "iam-006-header"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>IAM-007</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Microsoft Entra Agent ID Inventory</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Centralized AI agent identity catalog.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> List all AI agents created via Foundry / Copilot Studio:<br/><code>GET https://graph.microsoft.com/v1.0/servicePrincipals?$filter=tags/any(t:t eq 'WindowsAzureActiveDirectoryIntegratedApp') and tags/any(t:t eq 'AzureAIAgent')</code></div>"
-            },
-            "name": "iam-007-header"
           }
         ]
       },
@@ -1454,34 +1323,9 @@
           {
             "type": 1,
             "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-012</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Azure Container Registry</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>ACR for Foundry custom container images and managed online endpoint deployments.</span></div>"
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-012</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Defender for Cloud Plans</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Security posture and threat protection plans.</span></div>"
             },
             "name": "sec-012-header"
-          },
-          {
-            "type": 3,
-            "content": {
-              "version": "KqlItem/1.0",
-              "query": "resources\n| where type == 'microsoft.containerregistry/registries'\n| extend sku = tostring(sku.name),\n         publicAccess = tostring(properties.publicNetworkAccess),\n         peCount = array_length(properties.privateEndpointConnections)\n| project name, sku, publicAccess, peCount, location, subscriptionId",
-              "size": 3,
-              "title": "Azure Container Registry",
-              "queryType": 1,
-              "resourceType": "microsoft.resourcegraph/resources",
-              "crossComponentResources": [
-                "{Subscription}"
-              ],
-              "visualization": "table",
-              "noDataMessage": "No resources found in the selected subscription(s).",
-              "noDataMessageStyle": 4
-            },
-            "name": "sec-012-query"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-013</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Defender for Cloud Plans</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Security posture and threat protection plans.</span></div>"
-            },
-            "name": "sec-013-header"
           },
           {
             "type": 3,
@@ -1523,14 +1367,14 @@
                 ]
               }
             },
-            "name": "sec-013-query"
+            "name": "sec-012-query"
           },
           {
             "type": 1,
             "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-014</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Defender for AI Services</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Threat protection specifically for AI workloads (prompt injection, model abuse).</span></div>"
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-013</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Defender for AI Services</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Threat protection specifically for AI workloads (prompt injection, model abuse).</span></div>"
             },
-            "name": "sec-014-header"
+            "name": "sec-013-header"
           },
           {
             "type": 3,
@@ -1572,14 +1416,14 @@
                 ]
               }
             },
-            "name": "sec-014-query"
+            "name": "sec-013-query"
           },
           {
             "type": 1,
             "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-015</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Microsoft Sentinel</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>SIEM/SOAR coverage on Log Analytics workspaces.</span></div>"
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-014</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Microsoft Sentinel</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>SIEM/SOAR coverage on Log Analytics workspaces.</span></div>"
             },
-            "name": "sec-015-header"
+            "name": "sec-014-header"
           },
           {
             "type": 3,
@@ -1597,7 +1441,7 @@
               "noDataMessage": "No Microsoft Sentinel deployments found on any Log Analytics workspace.",
               "noDataMessageStyle": 4
             },
-            "name": "sec-015-query"
+            "name": "sec-014-query"
           }
         ]
       },
@@ -1668,45 +1512,6 @@
               "noDataMessageStyle": 4
             },
             "name": "pol-002-query"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>POL-003</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Defender Recommendations on AI</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Open Defender for Cloud recommendations targeting Foundry / Cognitive Services / Search.</span></div>"
-            },
-            "name": "pol-003-header"
-          },
-          {
-            "type": 3,
-            "content": {
-              "version": "KqlItem/1.0",
-              "query": "securityresources\n| where type =~ 'microsoft.security/assessments'\n| extend status = tostring(properties.status.code),\n         resourceId = tolower(tostring(properties.resourceDetails.id)),\n         displayName = tostring(properties.displayName),\n         severity = tostring(properties.metadata.severity)\n| where resourceId contains 'cognitiveservices'\n    or resourceId contains 'searchservices' or resourceId contains 'apimanagement'\n| where status != 'Healthy'\n| summarize Count=count() by displayName, severity\n| order by Count desc",
-              "size": 3,
-              "title": "Defender AI Recommendations",
-              "queryType": 1,
-              "resourceType": "microsoft.resourcegraph/resources",
-              "crossComponentResources": [
-                "{Subscription}"
-              ],
-              "visualization": "table",
-              "noDataMessage": "No open Defender recommendations on AI resources (or Defender plans are not enabled).",
-              "noDataMessageStyle": 4
-            },
-            "name": "pol-003-query"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>POL-004</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Compliance Manager State</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Microsoft Purview Compliance Manager assessment scores.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Compliance Manager scores live in Microsoft Purview / Microsoft 365 admin center, not in Azure Resource Graph. Review at <code>https://compliance.microsoft.com/compliancemanager</code> and align AI workloads to relevant assessments (ISO/IEC 23053, NIST AI RMF, EU AI Act, HIPAA, etc.).</div>"
-            },
-            "name": "pol-004-header"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>POL-005</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Regulatory Compliance Initiatives</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; ISO/IEC 23053:2022, NIST AI RMF, EU AI Act alignment.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Apply the regulatory compliance initiatives in Azure Policy for your industry. Available at: <code>Microsoft.Authorization/policySetDefinitions</code> with category 'Regulatory Compliance'.</div>"
-            },
-            "name": "pol-005-header"
           }
         ]
       },
@@ -1724,7 +1529,7 @@
           {
             "type": 1,
             "content": {
-              "json": "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Operational resilience and cost-related signals: regional distribution, agent execution isolation, and manual callouts for quotas / PTUs / budgets.</div>"
+              "json": "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Operational resilience and cost-related signals available through Azure Resource Graph.</div>"
             },
             "name": "ops-description"
           },
@@ -1777,20 +1582,6 @@
               "noDataMessageStyle": 4
             },
             "name": "ops-002-query"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>OPS-003</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Quotas & PTU Usage</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Provisioned Throughput Units and rate limits.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Quota and PTU usage are exposed via the Cognitive Services usage REST API:<br/><code>GET https://management.azure.com/subscriptions/{sub}/providers/Microsoft.CognitiveServices/locations/{region}/usages?api-version=2024-10-01</code></div>"
-            },
-            "name": "ops-003-header"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>OPS-004</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Cost Tracking & Budgets</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Subscription / resource group budgets and AI cost allocation.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Cost data is exposed via the Cost Management API:<br/><code>GET https://management.azure.com/subscriptions/{sub}/providers/Microsoft.Consumption/budgets?api-version=2023-05-01</code><br/>Generative AI Gateway capabilities in APIM can track per-client token spend.</div>"
-            },
-            "name": "ops-004-header"
           }
         ]
       },
@@ -1950,20 +1741,6 @@
               }
             },
             "name": "mon-004-query"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>MON-005</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Quality Evaluators</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Groundedness, relevance, coherence, fluency evaluators on Foundry agents.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Use Foundry data plane API:<br/><code>GET https://{account}.services.ai.azure.com/api/projects/{project}/evaluations?api-version=2025-05-01</code></div>"
-            },
-            "name": "mon-005-header"
-          },
-          {
-            "type": 1,
-            "content": {
-              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>MON-006</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Continuous / Online Evaluation</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Production-time evaluation runs on Foundry deployments.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> <code>GET https://{account}.services.ai.azure.com/api/projects/{project}/evaluations/runs?api-version=2025-05-01</code></div>"
-            },
-            "name": "mon-006-header"
           }
         ]
       },

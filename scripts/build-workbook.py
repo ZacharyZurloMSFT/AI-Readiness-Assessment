@@ -35,21 +35,6 @@ def query_header(qid: str, title: str, subtitle: str) -> dict:
     return html_block(html, f"{qid.lower()}-header")
 
 
-def manual_callout(qid: str, title: str, subtitle: str, body: str) -> dict:
-    html = (
-        "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'>"
-        f"<span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>{qid}</span>"
-        "&nbsp;&nbsp;"
-        f"<span style='font-size:14px;font-weight:600;color:#323130'>{title}</span>"
-        f"<span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; {subtitle}</span>"
-        "</div>"
-        "<div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'>"
-        f"<strong>&#x26A0; Manual Check Required:</strong> {body}"
-        "</div>"
-    )
-    return html_block(html, f"{qid.lower()}-header")
-
-
 def arg_query(
     qid: str,
     title: str,
@@ -222,7 +207,7 @@ SCORE_CARD_QUERY = SIGNAL_AGG + f"""| extend TotalWeighted = {build_total_expres
 
 def foundry_inventory_group() -> dict:
     items: list = [html_block(
-        "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Inventory of Microsoft Foundry resources and projects. Foundry is identified as <code>microsoft.cognitiveservices/accounts</code> with <code>kind = AIServices</code>. Connections and capability host rows are informational because Basic-tier Foundry uses service-managed backing resources that are not consistently represented as Azure Resource Graph child resources.</div>",
+        "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Inventory of Microsoft Foundry resources and projects. Foundry is identified as <code>microsoft.cognitiveservices/accounts</code> with <code>kind = AIServices</code>.</div>",
         "fdy-description")]
 
     items += [
@@ -255,33 +240,6 @@ def foundry_inventory_group() -> dict:
          endpoint = tostring(properties.endpoints)
 | project name, location, hasIdentity, endpoint, subscriptionId""",
                   formatters=[threshold_icon_formatter("hasIdentity", "true")]),
-
-        query_header("FDY-003", "Foundry Connections",
-                     "ARG-indexed Foundry connections. Basic-tier service-managed connections may not appear here."),
-        arg_query("FDY-003", "Foundry Connections",
-                  """resources
-| where type =~ 'microsoft.cognitiveservices/accounts/connections'
-    or type =~ 'microsoft.cognitiveservices/accounts/projects/connections'
-| extend category = tostring(properties.category),
-         target = tostring(properties.target),
-         authType = tostring(properties.authType)
-| project name, category, target, authType, subscriptionId
-| order by category asc, name asc""",
-                  no_data="No Foundry connections indexed in Azure Resource Graph. NextGen Foundry project connections are not reliably exposed in ARG. Verify connections in the Foundry portal or via: GET https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}/projects/{project}/connections?api-version=2025-05-15-preview"),
-
-        query_header("FDY-004", "Capability Hosts (Agent Service)",
-                     "ARG-indexed capability hosts for Standard tier resource wiring; Basic-tier Agent Service may not expose these."),
-        arg_query("FDY-004", "Capability Hosts",
-                  """resources
-| where type =~ 'microsoft.cognitiveservices/accounts/capabilityhosts'
-    or type =~ 'microsoft.cognitiveservices/accounts/projects/capabilityhosts'
-| extend storageConn = tostring(properties.storageConnections),
-         vectorStoreConn = tostring(properties.vectorStoreConnections),
-         threadConn = tostring(properties.threadStorageConnections),
-         capabilityKind = tostring(properties.capabilityHostKind),
-         provisioningState = tostring(properties.provisioningState)
-| project name, capabilityKind, provisioningState, storageConn, vectorStoreConn, threadConn, subscriptionId""",
-                  no_data="No capability hosts found. Capability hosts are provisioned on Standard tier Foundry deployments only. If you are on the Basic tier, agents still function but without explicit capability host resources &#x2014; this result is expected for Basic tier deployments."),
     ]
 
     return group_section("Foundry Inventory", items, expanded=True, name="foundry-inventory-group")
@@ -508,30 +466,13 @@ def rai_group() -> dict:
         html_block(
             "<div style='margin:8px 0;font-size:12px;color:#605e5c'>"
             "Microsoft Foundry guardrails are <strong>RAI policies</strong> that wrap every model deployment and agent. Every Foundry deployment automatically inherits the built-in <code>Microsoft.Default</code> policy "
-            "(Hate, Sexual, Self-Harm, Violence at medium severity, plus Jailbreak and Indirect-Attack shields). Custom policies layer additional controls "
-            "(Protected Material, Groundedness, Custom Categories, etc.) and tighter severity thresholds. Custom policy inventory is a manual/API check because RAI policy child resources are not consistently indexed in Azure Resource Graph."
+            "(Hate, Sexual, Self-Harm, Violence at medium severity, plus Jailbreak and Indirect-Attack shields). This pillar only shows guardrail feature signals available through Azure Resource Graph."
             "</div>",
             "rai-description"),
 
-        manual_callout("RAI-001", "Foundry Guardrail Policies",
-                       "Custom RAI (guardrail) policies defined on Foundry accounts &#x2014; layered on top of Microsoft.Default.",
-                       "Custom RAI policy child resources are not consistently indexed in Azure Resource Graph for Foundry Basic and other NextGen configurations. Verify policies through the management API:<br/>"
-                       "<code>GET https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}/raiPolicies?api-version=2024-10-01</code>"),
-
-        query_header("RAI-002", "Foundry Content Filter Capability",
-                     "Foundry accounts with the RaiMonitor capability available (required for guardrail enforcement at runtime)."),
-        arg_query("RAI-002", "Foundry Content Filter Capability",
-                  """resources
-| where type =~ 'microsoft.cognitiveservices/accounts' and kind =~ 'AIServices'
-| extend caps = properties.capabilities
-| mv-expand cap = caps
-| where tostring(cap.name) == 'RaiMonitor'
-| project name, kind, resourceGroup, subscriptionId, raiMonitor = 'Available'""",
-                  no_data="No Foundry accounts expose the RaiMonitor capability. Default Microsoft.Default guardrails still apply at the model API level."),
-
-        query_header("RAI-003", "Foundry Guardrail Feature Coverage",
+        query_header("RAI-001", "Foundry Guardrail Feature Coverage",
                      "Built-in safety features available on each Foundry account (jailbreak, prompt shield, groundedness, agent safety, etc.)."),
-        arg_query("RAI-003", "Foundry Guardrail Features",
+        arg_query("RAI-001", "Foundry Guardrail Features",
                   """resources
 | where type =~ 'microsoft.cognitiveservices/accounts'
 | where kind =~ 'AIServices'
@@ -565,24 +506,6 @@ def rai_group() -> dict:
 | project foundryAccount=name, feature, subscriptionId
 | order by foundryAccount asc, feature asc""",
                   no_data="No Foundry guardrail features detected."),
-
-        manual_callout("RAI-004", "Per-Deployment Guardrail Assignment",
-                       "Verify which guardrail policy is bound to each model deployment and agent.",
-                       "Model deployments are not reliably indexed in Azure Resource Graph. Use the management API per Foundry account:<br/>"
-                       "<code>GET https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}/deployments?api-version=2024-10-01</code><br/>"
-                       "Inspect <code>properties.raiPolicyName</code> on each deployment. <code>Microsoft.Default</code> = built-in; anything else = custom guardrail. "
-                       "Agents inherit the policy from the underlying model deployment unless overridden in the agent definition."),
-
-        manual_callout("RAI-005", "Guardrail Policy Controls Detail",
-                       "Inspect the actual risks, severity thresholds, and intervention points configured on each custom policy.",
-                       "<code>GET https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}/raiPolicies/{policy}?api-version=2024-10-01</code><br/>"
-                       "Review <code>properties.contentFilters</code> for filter category (Hate, Sexual, Violence, Self-Harm, Jailbreak, Protected Material, Groundedness, Custom Categories), <code>severityThreshold</code>, "
-                       "and <code>source</code> (Prompt vs Completion)."),
-
-        manual_callout("RAI-006", "Red Teaming Runs",
-                       "Check for completed red teaming runs and Attack Success Rate (ASR) metrics.",
-                       "Use Foundry portal or API to verify red teaming runs.<br/>"
-                       "<code>GET https://{account}.services.ai.azure.com/api/projects/{project}/redteams/runs?api-version=2025-05-01</code>"),
     ]
     return group_section("Responsible AI", items, name="rai-group")
 
@@ -590,7 +513,7 @@ def rai_group() -> dict:
 def iam_group() -> dict:
     items = [
         html_block(
-            "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Identity and access posture for Foundry resources. Includes RBAC analysis, key-based auth detection, and manual callouts for Conditional Access, MFA, PIM, and Entra Agent ID inventory.</div>",
+            "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Identity and access posture for Foundry resources. Includes RBAC analysis, managed identity coverage, and key-based auth detection.</div>",
             "iam-description"),
 
         query_header("IAM-001", "Foundry Account Authentication",
@@ -642,27 +565,6 @@ def iam_group() -> dict:
 | summarize Assignments=count() by roleType
 | order by Assignments desc""",
                   no_data="No Foundry RBAC assignments visible (requires Reader on the management group/subscription)."),
-
-        manual_callout("IAM-004", "Conditional Access Policies",
-                       "Risk-based Conditional Access for Foundry portal and APIs.",
-                       "Conditional Access state lives in Microsoft Entra ID and is not surfaced in Azure Resource Graph. "
-                       "Review via Entra portal or Microsoft Graph:<br/>"
-                       "<code>GET https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies</code>"),
-
-        manual_callout("IAM-005", "Multi-Factor Authentication",
-                       "MFA enforcement for users accessing Foundry.",
-                       "Verify via Microsoft Graph sign-in logs and authentication strength policies:<br/>"
-                       "<code>GET https://graph.microsoft.com/v1.0/policies/authenticationStrengthPolicies</code>"),
-
-        manual_callout("IAM-006", "Privileged Identity Management",
-                       "Just-in-time elevation for Foundry administrative roles.",
-                       "Inspect PIM eligible / active assignments for Cognitive Services Contributor / Azure AI Developer:<br/>"
-                       "<code>GET https://graph.microsoft.com/v1.0/roleManagement/directory/roleAssignmentScheduleInstances</code>"),
-
-        manual_callout("IAM-007", "Microsoft Entra Agent ID Inventory",
-                       "Centralized AI agent identity catalog.",
-                       "List all AI agents created via Foundry / Copilot Studio:<br/>"
-                       "<code>GET https://graph.microsoft.com/v1.0/servicePrincipals?$filter=tags/any(t:t eq 'WindowsAzureActiveDirectoryIntegratedApp') and tags/any(t:t eq 'AzureAIAgent')</code>"),
     ]
     return group_section("Identity & Access", items, name="iam-group")
 
@@ -806,19 +708,9 @@ def network_security_group() -> dict:
          identityType = tostring(identity.type)
 | project name, sku, identityType, location, subscriptionId"""),
 
-        query_header("SEC-012", "Azure Container Registry",
-                     "ACR for Foundry custom container images and managed online endpoint deployments."),
-        arg_query("SEC-012", "Azure Container Registry",
-                  """resources
-| where type == 'microsoft.containerregistry/registries'
-| extend sku = tostring(sku.name),
-         publicAccess = tostring(properties.publicNetworkAccess),
-         peCount = array_length(properties.privateEndpointConnections)
-| project name, sku, publicAccess, peCount, location, subscriptionId"""),
-
-        query_header("SEC-013", "Defender for Cloud Plans",
+        query_header("SEC-012", "Defender for Cloud Plans",
                      "Security posture and threat protection plans."),
-        arg_query("SEC-013", "Defender Plans",
+        arg_query("SEC-012", "Defender Plans",
                   """securityresources
 | where type == 'microsoft.security/pricings'
 | where name in ('CloudPosture', 'Containers', 'VirtualMachines', 'StorageAccounts', 'Api', 'KeyVaults')
@@ -826,9 +718,9 @@ def network_security_group() -> dict:
                   formatters=[threshold_icon_formatter("tier", "Standard",
                                                        success_text="Standard", default_text="Free")]),
 
-        query_header("SEC-014", "Defender for AI Services",
+        query_header("SEC-013", "Defender for AI Services",
                      "Threat protection specifically for AI workloads (prompt injection, model abuse)."),
-        arg_query("SEC-014", "Defender for AI",
+        arg_query("SEC-013", "Defender for AI",
                   """securityresources
 | where type == 'microsoft.security/pricings'
 | where name == 'AI'
@@ -836,9 +728,9 @@ def network_security_group() -> dict:
                   formatters=[threshold_icon_formatter("tier", "Standard",
                                                        success_text="Standard", default_text="Free")]),
 
-        query_header("SEC-015", "Microsoft Sentinel",
+        query_header("SEC-014", "Microsoft Sentinel",
                      "SIEM/SOAR coverage on Log Analytics workspaces."),
-        arg_query("SEC-015", "Sentinel Workspaces",
+        arg_query("SEC-014", "Sentinel Workspaces",
                   """resources
 | where type =~ 'microsoft.operationsmanagement/solutions'
 | where name startswith 'SecurityInsights'
@@ -880,33 +772,6 @@ def policy_compliance_group() -> dict:
 | order by nonCompliant desc
 | top 25 by nonCompliant""",
                   no_data="No non-compliant policy states found (or policyinsights data not yet available)."),
-
-        query_header("POL-003", "Defender Recommendations on AI",
-                     "Open Defender for Cloud recommendations targeting Foundry / Cognitive Services / Search."),
-        arg_query("POL-003", "Defender AI Recommendations",
-                  """securityresources
-| where type =~ 'microsoft.security/assessments'
-| extend status = tostring(properties.status.code),
-         resourceId = tolower(tostring(properties.resourceDetails.id)),
-         displayName = tostring(properties.displayName),
-         severity = tostring(properties.metadata.severity)
-| where resourceId contains 'cognitiveservices'
-    or resourceId contains 'searchservices' or resourceId contains 'apimanagement'
-| where status != 'Healthy'
-| summarize Count=count() by displayName, severity
-| order by Count desc""",
-                  no_data="No open Defender recommendations on AI resources (or Defender plans are not enabled)."),
-
-        manual_callout("POL-004", "Compliance Manager State",
-                       "Microsoft Purview Compliance Manager assessment scores.",
-                       "Compliance Manager scores live in Microsoft Purview / Microsoft 365 admin center, not in Azure Resource Graph. "
-                       "Review at <code>https://compliance.microsoft.com/compliancemanager</code> and align AI workloads to relevant assessments "
-                       "(ISO/IEC 23053, NIST AI RMF, EU AI Act, HIPAA, etc.)."),
-
-        manual_callout("POL-005", "Regulatory Compliance Initiatives",
-                       "ISO/IEC 23053:2022, NIST AI RMF, EU AI Act alignment.",
-                       "Apply the regulatory compliance initiatives in Azure Policy for your industry. "
-                       "Available at: <code>Microsoft.Authorization/policySetDefinitions</code> with category 'Regulatory Compliance'."),
     ]
     return group_section("Policy & Compliance", items, name="pol-group")
 
@@ -914,7 +779,7 @@ def policy_compliance_group() -> dict:
 def cost_ops_group() -> dict:
     items = [
         html_block(
-            "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Operational resilience and cost-related signals: regional distribution, agent execution isolation, and manual callouts for quotas / PTUs / budgets.</div>",
+            "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Operational resilience and cost-related signals available through Azure Resource Graph.</div>",
             "ops-description"),
 
         query_header("OPS-001", "Foundry Multi-Region Presence",
@@ -934,17 +799,6 @@ def cost_ops_group() -> dict:
          poolMgmtType = tostring(properties.poolManagementType)
 | project name, containerType, poolMgmtType, location, subscriptionId""",
                   no_data="No Container Apps session pools found. Use Dynamic Sessions for sandboxed agent code execution."),
-
-        manual_callout("OPS-003", "Foundry Quotas & PTU Usage",
-                       "Provisioned Throughput Units and rate limits.",
-                       "Quota and PTU usage are exposed via the Cognitive Services usage REST API:<br/>"
-                       "<code>GET https://management.azure.com/subscriptions/{sub}/providers/Microsoft.CognitiveServices/locations/{region}/usages?api-version=2024-10-01</code>"),
-
-        manual_callout("OPS-004", "Cost Tracking & Budgets",
-                       "Subscription / resource group budgets and AI cost allocation.",
-                       "Cost data is exposed via the Cost Management API:<br/>"
-                       "<code>GET https://management.azure.com/subscriptions/{sub}/providers/Microsoft.Consumption/budgets?api-version=2023-05-01</code><br/>"
-                       "Generative AI Gateway capabilities in APIM can track per-client token spend."),
     ]
     return group_section("Cost & Operations", items, name="ops-group")
 
@@ -1000,15 +854,6 @@ def monitoring_group() -> dict:
 | extend hasWorkspace = isnotnull(workspaceId)
 | summarize Total=count(), RoutingToWorkspace=countif(hasWorkspace == true) by type""",
                   formatters=[heat_formatter("RoutingToWorkspace")]),
-
-        manual_callout("MON-005", "Foundry Quality Evaluators",
-                       "Groundedness, relevance, coherence, fluency evaluators on Foundry agents.",
-                       "Use Foundry data plane API:<br/>"
-                       "<code>GET https://{account}.services.ai.azure.com/api/projects/{project}/evaluations?api-version=2025-05-01</code>"),
-
-        manual_callout("MON-006", "Continuous / Online Evaluation",
-                       "Production-time evaluation runs on Foundry deployments.",
-                       "<code>GET https://{account}.services.ai.azure.com/api/projects/{project}/evaluations/runs?api-version=2025-05-01</code>"),
     ]
     return group_section("Monitoring & Operations", items, name="mon-group")
 
@@ -1166,6 +1011,9 @@ def write_query_reference(wb: dict) -> None:
 
     arg_count = sum(1 for q in queries if q["kind"] == "ARG")
     manual_count = sum(1 for q in queries if q["kind"] == "Manual/API")
+    total_line = f"**Total: {len(queries)} queries** ({arg_count} ARG)."
+    if manual_count:
+        total_line = f"**Total: {len(queries)} queries** ({arg_count} ARG, {manual_count} Manual/API)."
 
     lines = [
         "# AIRA \u2014 Query Reference",
@@ -1173,7 +1021,7 @@ def write_query_reference(wb: dict) -> None:
         "All queries executed by the AI Platform Readiness Assessment workbook. "
         "This file is auto-generated from the workbook source by `scripts/build-workbook.py`.",
         "",
-        f"**Total: {len(queries)} queries** ({arg_count} ARG, {manual_count} Manual/API).",
+        total_line,
         "",
     ]
     for p in pillar_order:

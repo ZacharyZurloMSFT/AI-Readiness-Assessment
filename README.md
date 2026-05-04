@@ -7,7 +7,7 @@ Assess your Azure environment's readiness for **Microsoft Foundry**-based AI wor
 
 > **Scope:** This assessment is focused on **Microsoft Foundry** (`microsoft.cognitiveservices/accounts` with `kind = AIServices`). Standalone Azure OpenAI account signals are intentionally excluded — Microsoft Foundry is the unified successor.
 
-Some control-plane and data-plane signals (custom guardrail policies, Conditional Access, MFA, PIM, quota/PTU usage, budgets) are **not exposed via Azure Resource Graph** and are surfaced as Manual/API checks with the exact REST call documented in the workbook.
+Signals that are not exposed through Azure Resource Graph are outside the scope of this workbook.
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FZacharyZurloMSFT%2FAI-Readiness-Assessment%2Fmain%2Fworkbook%2Fazuredeploy.json)
 
@@ -17,16 +17,16 @@ Some control-plane and data-plane signals (custom guardrail policies, Conditiona
 
 | # | Pillar | Max | Queries | Coverage |
 |:-:|--------|:---:|:-------:|----------|
-| 1 | **Foundry Inventory** | 6 | 4 | Foundry accounts, projects, and informational ARG-indexed connections/capability hosts for Standard tier |
+| 1 | **Foundry Inventory** | 6 | 2 | Foundry accounts and projects |
 | 2 | **Data Management & Governance** | 7 | 8 | Purview, Databricks (Unity Catalog), Data Factory + Git, ADLS Gen2, Microsoft Fabric, lifecycle policies |
 | 3 | **Retrieval & Context Enablement** | 5 | 5 | AI Search, Redis, Cosmos DB / PostgreSQL pgvector, Document Intelligence |
-| 4 | **Responsible AI** | 2 | 6 | **Foundry guardrails (RAI policies)**, RaiMonitor capability, guardrail feature coverage (jailbreak, prompt shield, groundedness, agent safety), per-deployment guardrail assignment (manual), policy controls detail (manual), red teaming (manual) |
-| 5 | **Identity & Access** | 5 | 7 | Disable local auth, Managed Identity coverage, RBAC analysis, Conditional Access / MFA / PIM / Entra Agent ID (manual) |
-| 6 | **Network & Security** | 12 | 15 | Private endpoints, network injection mode, CMK, Key Vault hardening, VNets, NSGs, Firewall, WAF, Private DNS, Bastion, ACR, APIM, Defender, Sentinel |
-| 7 | **Policy & Compliance** | 3 | 5 | AI policy assignments, compliance state, Defender on AI recommendations, Compliance Manager, regulatory initiatives |
-| 8 | **Cost & Operations** | 5 | 4 | Multi-region foundry, Container Apps Dynamic Sessions, quotas / PTUs (manual), budgets (manual) |
-| 9 | **Monitoring & Operations** | 5 | 6 | App Insights, diagnostics coverage, metric alerts, LAW routing, quality / online evaluators |
-|   | **Total** | **50** | **60** | 46 automated ARG queries + 14 Manual/API checks |
+| 4 | **Responsible AI** | 2 | 1 | Foundry guardrail feature coverage |
+| 5 | **Identity & Access** | 5 | 3 | Disable local auth, Managed Identity coverage, RBAC analysis |
+| 6 | **Network & Security** | 12 | 14 | Private endpoints, network injection mode, CMK, Key Vault hardening, VNets, NSGs, Firewall, WAF, Private DNS, Bastion, APIM, Defender, Sentinel |
+| 7 | **Policy & Compliance** | 3 | 2 | AI policy assignments and compliance state |
+| 8 | **Cost & Operations** | 5 | 2 | Multi-region foundry and Container Apps Dynamic Sessions |
+| 9 | **Monitoring & Operations** | 5 | 4 | App Insights, diagnostics coverage, metric alerts, LAW routing |
+|   | **Total** | **50** | **41** | 41 automated ARG queries |
 
 For the full list of queries with their IDs and descriptions, see [queries.md](queries.md).
 

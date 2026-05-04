@@ -2,7 +2,7 @@
 
 All queries executed by the AI Platform Readiness Assessment workbook. This file is auto-generated from the workbook source by `scripts/build-workbook.py`.
 
-**Total: 60 queries** (46 ARG, 14 Manual/API).
+**Total: 41 queries** (41 ARG).
 
 ## Foundry Inventory
 
@@ -10,8 +10,6 @@ All queries executed by the AI Platform Readiness Assessment workbook. This file
 |----------|-----------|------|-------------|
 | FDY-001 | Foundry Accounts | ARG | Microsoft Foundry account inventory with identity, network, encryption, and auth configuration. |
 | FDY-002 | Foundry Projects | ARG | Projects organize models, data, and agents within a Foundry account. |
-| FDY-003 | Foundry Connections | ARG | ARG-indexed Foundry connections. Basic-tier service-managed connections may not appear here. |
-| FDY-004 | Capability Hosts (Agent Service) | ARG | ARG-indexed capability hosts for Standard tier resource wiring; Basic-tier Agent Service may not expose these. |
 
 ## Data Management & Governance
 
@@ -40,12 +38,7 @@ All queries executed by the AI Platform Readiness Assessment workbook. This file
 
 | Query ID | Query Name | Type | Description |
 |----------|-----------|------|-------------|
-| RAI-001 | Foundry Guardrail Policies | Manual/API | Custom RAI (guardrail) policies defined on Foundry accounts &#x2014; layered on top of Microsoft.Default. |
-| RAI-002 | Foundry Content Filter Capability | ARG | Foundry accounts with the RaiMonitor capability available (required for guardrail enforcement at runtime). |
-| RAI-003 | Foundry Guardrail Feature Coverage | ARG | Built-in safety features available on each Foundry account (jailbreak, prompt shield, groundedness, agent safety, etc.). |
-| RAI-004 | Per-Deployment Guardrail Assignment | Manual/API | Verify which guardrail policy is bound to each model deployment and agent. |
-| RAI-005 | Guardrail Policy Controls Detail | Manual/API | Inspect the actual risks, severity thresholds, and intervention points configured on each custom policy. |
-| RAI-006 | Red Teaming Runs | Manual/API | Check for completed red teaming runs and Attack Success Rate (ASR) metrics. |
+| RAI-001 | Foundry Guardrail Feature Coverage | ARG | Built-in safety features available on each Foundry account (jailbreak, prompt shield, groundedness, agent safety, etc.). |
 
 ## Identity & Access
 
@@ -54,10 +47,6 @@ All queries executed by the AI Platform Readiness Assessment workbook. This file
 | IAM-001 | Foundry Account Authentication | ARG | Disable local auth (key-based) on Foundry accounts &#x2014; Entra ID only is recommended. |
 | IAM-002 | Managed Identity Coverage | ARG | Foundry accounts, projects, AI Search, and APIM with managed identity. |
 | IAM-003 | RBAC Role Assignments on Foundry | ARG | Counts of role assignments on Foundry accounts &#x2014; flag potential overprivileged access. |
-| IAM-004 | Conditional Access Policies | Manual/API | Risk-based Conditional Access for Foundry portal and APIs. |
-| IAM-005 | Multi-Factor Authentication | Manual/API | MFA enforcement for users accessing Foundry. |
-| IAM-006 | Privileged Identity Management | Manual/API | Just-in-time elevation for Foundry administrative roles. |
-| IAM-007 | Microsoft Entra Agent ID Inventory | Manual/API | Centralized AI agent identity catalog. |
 
 ## Network & Security
 
@@ -74,10 +63,9 @@ All queries executed by the AI Platform Readiness Assessment workbook. This file
 | SEC-009 | Private DNS Zones for AI Services | ARG | Required for private endpoint name resolution to Foundry / AI Search / OpenAI. |
 | SEC-010 | Azure Bastion | ARG | Secure RDP/SSH access to jumpboxes inside Foundry VNet without public IPs. |
 | SEC-011 | API Management as AI Gateway | ARG | APIM for centralized AI API access control, throttling, and auth. |
-| SEC-012 | Azure Container Registry | ARG | ACR for Foundry custom container images and managed online endpoint deployments. |
-| SEC-013 | Defender for Cloud Plans | ARG | Security posture and threat protection plans. |
-| SEC-014 | Defender for AI Services | ARG | Threat protection specifically for AI workloads (prompt injection, model abuse). |
-| SEC-015 | Microsoft Sentinel | ARG | SIEM/SOAR coverage on Log Analytics workspaces. |
+| SEC-012 | Defender for Cloud Plans | ARG | Security posture and threat protection plans. |
+| SEC-013 | Defender for AI Services | ARG | Threat protection specifically for AI workloads (prompt injection, model abuse). |
+| SEC-014 | Microsoft Sentinel | ARG | SIEM/SOAR coverage on Log Analytics workspaces. |
 
 ## Policy & Compliance
 
@@ -85,9 +73,6 @@ All queries executed by the AI Platform Readiness Assessment workbook. This file
 |----------|-----------|------|-------------|
 | POL-001 | Policy Assignments Targeting AI | ARG | Azure Policy assignments referencing Cognitive Services / Foundry / AI Search scopes. |
 | POL-002 | Policy Compliance State | ARG | Non-compliant policy states across the subscription. |
-| POL-003 | Defender Recommendations on AI | ARG | Open Defender for Cloud recommendations targeting Foundry / Cognitive Services / Search. |
-| POL-004 | Compliance Manager State | Manual/API | Microsoft Purview Compliance Manager assessment scores. |
-| POL-005 | Regulatory Compliance Initiatives | Manual/API | ISO/IEC 23053:2022, NIST AI RMF, EU AI Act alignment. |
 
 ## Cost & Operations
 
@@ -95,8 +80,6 @@ All queries executed by the AI Platform Readiness Assessment workbook. This file
 |----------|-----------|------|-------------|
 | OPS-001 | Foundry Multi-Region Presence | ARG | Foundry accounts deployed across multiple regions for BCDR. |
 | OPS-002 | Container Apps Dynamic Sessions | ARG | Isolated, ephemeral execution environments for AI agent code execution. |
-| OPS-003 | Foundry Quotas & PTU Usage | Manual/API | Provisioned Throughput Units and rate limits. |
-| OPS-004 | Cost Tracking & Budgets | Manual/API | Subscription / resource group budgets and AI cost allocation. |
 
 ## Monitoring & Operations
 
@@ -106,6 +89,4 @@ All queries executed by the AI Platform Readiness Assessment workbook. This file
 | MON-002 | Foundry Diagnostics Coverage | ARG | Diagnostic settings on Foundry accounts. |
 | MON-003 | Metric Alert Rules | ARG | Metric alerts targeting Foundry / Cognitive Services. |
 | MON-004 | Log Analytics Workspace Routing | ARG | Foundry / AI Search resources sending diagnostics to a workspace. |
-| MON-005 | Foundry Quality Evaluators | Manual/API | Groundedness, relevance, coherence, fluency evaluators on Foundry agents. |
-| MON-006 | Continuous / Online Evaluation | Manual/API | Production-time evaluation runs on Foundry deployments. |
 
