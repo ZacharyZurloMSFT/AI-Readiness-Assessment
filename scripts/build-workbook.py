@@ -144,9 +144,6 @@ SIGNAL_AGG = """resources
     foundry_regions=dcountif(location, type=='microsoft.cognitiveservices/accounts' and kind=~'AIServices'),
     fproject=countif(type=~'microsoft.cognitiveservices/accounts/projects'),
     fproject_id=countif(type=~'microsoft.cognitiveservices/accounts/projects' and isnotnull(identity.principalId)),
-    capability_host=countif(type=~'microsoft.cognitiveservices/accounts/capabilityhosts' or type=~'microsoft.cognitiveservices/accounts/projects/capabilityhosts'),
-    fconnection=countif(type=~'microsoft.cognitiveservices/accounts/connections' or type=~'microsoft.cognitiveservices/accounts/projects/connections'),
-    custom_rai=countif(type=~'microsoft.cognitiveservices/accounts/raipolicies'),
     keyvault=countif(type=='microsoft.keyvault/vaults'),
     kv_hardened=countif(type=='microsoft.keyvault/vaults' and tobool(properties.enableRbacAuthorization)==true and tobool(properties.enableSoftDelete)==true and tobool(properties.enablePurgeProtection)==true),
     foundry_pe=countif(type=='microsoft.cognitiveservices/accounts' and kind=~'AIServices' and array_length(properties.privateEndpointConnections) > 0),
@@ -164,14 +161,14 @@ SIGNAL_AGG = """resources
 # Score formula building. Each pillar has component scores summed and a max.
 # Pillar definitions (label|sortOrder|max|expression)
 PILLAR_DEFS = [
-    ("Foundry Inventory", 1, 8,
-     "iff(foundry>0,2,0) + iff(foundry_id>0,1,0) + iff(fproject>0,2,0) + iff(fproject_id>0,1,0) + iff(fconnection>0,1,0) + iff(capability_host>0,1,0)"),
+    ("Foundry Inventory", 1, 6,
+     "iff(foundry>0,2,0) + iff(foundry_id>0,1,0) + iff(fproject>0,2,0) + iff(fproject_id>0,1,0)"),
     ("Data Management & Governance", 2, 7,
      "iff(purview>0,3,0) + iff(databricks>0,2,0) + iff(adf_git>0,2,iff(adf>0,1,0))"),
     ("Retrieval & Context Enablement", 3, 5,
      "iff(aisearch>0,2,0) + iff(redis>0,1,0) + iff(cosmos>0,1,0) + iff(docint>0,1,0)"),
-    ("Responsible AI", 4, 5,
-     "iff(foundry>0,2,0) + iff(custom_rai>0,3,0)"),
+    ("Responsible AI", 4, 2,
+     "iff(foundry>0,2,0)"),
     ("Identity & Access", 5, 5,
      "iff(foundry_id>0,2,0) + iff(apim_mi>0,1,iff(apim>0,0,0)) + iff(foundry_nokey>0,2,0)"),
     ("Network & Security", 6, 12,
@@ -183,7 +180,7 @@ PILLAR_DEFS = [
     ("Monitoring & Operations", 9, 5,
      "iff(appinsights>0,3,0) + iff(foundry_id>0,2,0)"),
 ]
-TOTAL_MAX = sum(p[2] for p in PILLAR_DEFS)  # = 55
+TOTAL_MAX = sum(p[2] for p in PILLAR_DEFS)  # = 50
 
 
 def build_pillar_pack_array() -> str:
@@ -225,7 +222,7 @@ SCORE_CARD_QUERY = SIGNAL_AGG + f"""| extend TotalWeighted = {build_total_expres
 
 def foundry_inventory_group() -> dict:
     items: list = [html_block(
-        "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Inventory of Microsoft Foundry resources, projects, model deployments, connections, and agent service capability hosts. Foundry is identified as <code>microsoft.cognitiveservices/accounts</code> with <code>kind = AIServices</code>.</div>",
+        "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Inventory of Microsoft Foundry resources and projects. Foundry is identified as <code>microsoft.cognitiveservices/accounts</code> with <code>kind = AIServices</code>. Connections and capability host rows are informational because Basic-tier Foundry uses service-managed backing resources that are not consistently represented as Azure Resource Graph child resources.</div>",
         "fdy-description")]
 
     items += [
@@ -250,7 +247,7 @@ def foundry_inventory_group() -> dict:
                   ]),
 
         query_header("FDY-002", "Foundry Projects",
-                     "Projects organize models, data, agents, and evaluations within a Foundry account."),
+                     "Projects organize models, data, and agents within a Foundry account."),
         arg_query("FDY-002", "Foundry Projects",
                   """resources
 | where type =~ 'microsoft.cognitiveservices/accounts/projects'
@@ -260,7 +257,7 @@ def foundry_inventory_group() -> dict:
                   formatters=[threshold_icon_formatter("hasIdentity", "true")]),
 
         query_header("FDY-003", "Foundry Connections",
-                     "Connections wire Foundry projects to AI Search, Storage, Cosmos, OpenAI, Bing, and other resources."),
+                     "ARG-indexed Foundry connections. Basic-tier service-managed connections may not appear here."),
         arg_query("FDY-003", "Foundry Connections",
                   """resources
 | where type =~ 'microsoft.cognitiveservices/accounts/connections'
@@ -273,7 +270,7 @@ def foundry_inventory_group() -> dict:
                   no_data="No Foundry connections indexed in Azure Resource Graph. NextGen Foundry project connections are not reliably exposed in ARG. Verify connections in the Foundry portal or via: GET https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}/projects/{project}/connections?api-version=2025-05-15-preview"),
 
         query_header("FDY-004", "Capability Hosts (Agent Service)",
-                     "Capability hosts indicate Foundry Agent Service is configured (Standard tier only &#x2014; storage + thread + vector store wiring)."),
+                     "ARG-indexed capability hosts for Standard tier resource wiring; Basic-tier Agent Service may not expose these."),
         arg_query("FDY-004", "Capability Hosts",
                   """resources
 | where type =~ 'microsoft.cognitiveservices/accounts/capabilityhosts'
@@ -285,14 +282,6 @@ def foundry_inventory_group() -> dict:
          provisioningState = tostring(properties.provisioningState)
 | project name, capabilityKind, provisioningState, storageConn, vectorStoreConn, threadConn, subscriptionId""",
                   no_data="No capability hosts found. Capability hosts are provisioned on Standard tier Foundry deployments only. If you are on the Basic tier, agents still function but without explicit capability host resources &#x2014; this result is expected for Basic tier deployments."),
-
-        manual_callout("FDY-005", "Model Deployments, Agents, Evaluations, Threads",
-                       "Foundry deployments and data-plane resources are not reliably exposed to Azure Resource Graph.",
-                       "Use the Azure Cognitive Services management API to list model deployments, and the Foundry data-plane REST API for agents, evaluations, and threads. <br/>"
-                       "<code>GET https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}/deployments?api-version=2024-10-01</code><br/>"
-                       "<code>GET https://{account}.services.ai.azure.com/api/projects/{project}/agents?api-version=2025-05-01</code><br/>"
-                       "<code>GET https://{account}.services.ai.azure.com/api/projects/{project}/evaluations?api-version=2025-05-01</code><br/>"
-                       "<code>GET https://{account}.services.ai.azure.com/api/projects/{project}/threads?api-version=2025-05-01</code>"),
     ]
 
     return group_section("Foundry Inventory", items, expanded=True, name="foundry-inventory-group")
@@ -520,22 +509,14 @@ def rai_group() -> dict:
             "<div style='margin:8px 0;font-size:12px;color:#605e5c'>"
             "Microsoft Foundry guardrails are <strong>RAI policies</strong> that wrap every model deployment and agent. Every Foundry deployment automatically inherits the built-in <code>Microsoft.Default</code> policy "
             "(Hate, Sexual, Self-Harm, Violence at medium severity, plus Jailbreak and Indirect-Attack shields). Custom policies layer additional controls "
-            "(Protected Material, Groundedness, Custom Categories, etc.) and tighter severity thresholds. This pillar checks that those Foundry-native guardrails are present and customised."
+            "(Protected Material, Groundedness, Custom Categories, etc.) and tighter severity thresholds. Custom policy inventory is a manual/API check because RAI policy child resources are not consistently indexed in Azure Resource Graph."
             "</div>",
             "rai-description"),
 
-        query_header("RAI-001", "Foundry Guardrail Policies",
-                     "Custom RAI (guardrail) policies defined on Foundry accounts &#x2014; layered on top of Microsoft.Default."),
-        arg_query("RAI-001", "Foundry Guardrail Policies",
-                  """resources
-| where type =~ 'microsoft.cognitiveservices/accounts/raipolicies'
-| extend parentAccount = tostring(split(id, '/')[8]),
-         mode = tostring(properties.mode),
-         basePolicyName = tostring(properties.basePolicyName),
-         policyType = tostring(properties.type)
-| project parentAccount, policyName=name, mode, basePolicyName, policyType, subscriptionId
-| order by parentAccount asc, policyName asc""",
-                  no_data="No custom guardrail policies indexed in Azure Resource Graph. RAI policies may not be reliably exposed in ARG for all NextGen Foundry configurations. Verify via: GET https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}/raiPolicies?api-version=2024-10-01"),
+        manual_callout("RAI-001", "Foundry Guardrail Policies",
+                       "Custom RAI (guardrail) policies defined on Foundry accounts &#x2014; layered on top of Microsoft.Default.",
+                       "Custom RAI policy child resources are not consistently indexed in Azure Resource Graph for Foundry Basic and other NextGen configurations. Verify policies through the management API:<br/>"
+                       "<code>GET https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}/raiPolicies?api-version=2024-10-01</code>"),
 
         query_header("RAI-002", "Foundry Content Filter Capability",
                      "Foundry accounts with the RaiMonitor capability available (required for guardrail enforcement at runtime)."),
@@ -1124,7 +1105,7 @@ def build_workbook() -> dict:
 
     footer = html_block(
         "<div style='margin-top:24px;padding:12px 16px;background:#f3f2f1;border-radius:4px;font-size:12px;color:#605e5c;display:flex;justify-content:center;align-items:center;gap:6px'>"
-        "<a href='https://github.com/Azure/ai-readiness-assessment' style='color:#24292f;text-decoration:none;display:flex;align-items:center;gap:6px'>"
+        "<a href='https://github.com/ZacharyZurloMSFT/AI-Readiness-Assessment' style='color:#24292f;text-decoration:none;display:flex;align-items:center;gap:6px'>"
         "<svg height='16' width='16' viewBox='0 0 16 16' fill='#24292f'><path d='M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z'/></svg>"
         "View on GitHub</a></div>",
         "footer")

@@ -2,17 +2,16 @@
 
 All queries executed by the AI Platform Readiness Assessment workbook. This file is auto-generated from the workbook source by `scripts/build-workbook.py`.
 
-**Total: 61 queries** (47 ARG, 14 Manual/API).
+**Total: 60 queries** (46 ARG, 14 Manual/API).
 
 ## Foundry Inventory
 
 | Query ID | Query Name | Type | Description |
 |----------|-----------|------|-------------|
 | FDY-001 | Foundry Accounts | ARG | Microsoft Foundry account inventory with identity, network, encryption, and auth configuration. |
-| FDY-002 | Foundry Projects | ARG | Projects organize models, data, agents, and evaluations within a Foundry account. |
-| FDY-003 | Foundry Connections | ARG | Connections wire Foundry projects to AI Search, Storage, Cosmos, OpenAI, Bing, and other resources. |
-| FDY-004 | Capability Hosts (Agent Service) | ARG | Capability hosts indicate Foundry Agent Service is configured (Standard tier only &#x2014; storage + thread + vector store wiring). |
-| FDY-005 | Model Deployments, Agents, Evaluations, Threads | Manual/API | Foundry deployments and data-plane resources are not reliably exposed to Azure Resource Graph. |
+| FDY-002 | Foundry Projects | ARG | Projects organize models, data, and agents within a Foundry account. |
+| FDY-003 | Foundry Connections | ARG | ARG-indexed Foundry connections. Basic-tier service-managed connections may not appear here. |
+| FDY-004 | Capability Hosts (Agent Service) | ARG | ARG-indexed capability hosts for Standard tier resource wiring; Basic-tier Agent Service may not expose these. |
 
 ## Data Management & Governance
 
@@ -41,7 +40,7 @@ All queries executed by the AI Platform Readiness Assessment workbook. This file
 
 | Query ID | Query Name | Type | Description |
 |----------|-----------|------|-------------|
-| RAI-001 | Foundry Guardrail Policies | ARG | Custom RAI (guardrail) policies defined on Foundry accounts &#x2014; layered on top of Microsoft.Default. |
+| RAI-001 | Foundry Guardrail Policies | Manual/API | Custom RAI (guardrail) policies defined on Foundry accounts &#x2014; layered on top of Microsoft.Default. |
 | RAI-002 | Foundry Content Filter Capability | ARG | Foundry accounts with the RaiMonitor capability available (required for guardrail enforcement at runtime). |
 | RAI-003 | Foundry Guardrail Feature Coverage | ARG | Built-in safety features available on each Foundry account (jailbreak, prompt shield, groundedness, agent safety, etc.). |
 | RAI-004 | Per-Deployment Guardrail Assignment | Manual/API | Verify which guardrail policy is bound to each model deployment and agent. |

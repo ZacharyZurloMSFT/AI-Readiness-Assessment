@@ -16,7 +16,7 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 
 ### Reporting Issues
 
-- Search [existing issues](https://github.com/microsoft/ai-platform-readiness-assessment/issues) first
+- Search [existing issues](https://github.com/ZacharyZurloMSFT/AI-Readiness-Assessment/issues) first
 - Use the appropriate issue template (bug report or feature request)
 - Include as much detail as possible
 

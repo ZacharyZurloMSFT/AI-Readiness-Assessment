@@ -58,9 +58,9 @@ jobs:
             - **ai-readiness-assessment.workbook** — Standalone workbook JSON for manual import
 
             ### Deploy
-            [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmicrosoft%2Fai-platform-readiness-assessment%2F${{ steps.version.outputs.tag }}%2Fworkbook%2Fazuredeploy.json)
+            [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FZacharyZurloMSFT%2FAI-Readiness-Assessment%2F${{ steps.version.outputs.tag }}%2Fworkbook%2Fazuredeploy.json)
 
-            See [CHANGELOG.md](https://github.com/microsoft/ai-platform-readiness-assessment/blob/main/CHANGELOG.md) for details.
+            See [CHANGELOG.md](https://github.com/ZacharyZurloMSFT/AI-Readiness-Assessment/blob/main/CHANGELOG.md) for details.
           files: |
             ai-platform-readiness-assessment-${{ steps.version.outputs.tag }}.zip
             workbook/azuredeploy.json

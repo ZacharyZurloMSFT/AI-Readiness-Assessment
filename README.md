@@ -1,13 +1,13 @@
 # AI Platform Readiness Assessment
 
-[![Validate](https://github.com/krishna-sunkavalli/ai-platform-readiness-assessment/actions/workflows/validate.yml/badge.svg)](https://github.com/krishna-sunkavalli/ai-platform-readiness-assessment/actions/workflows/validate.yml)
+[![Validate](https://github.com/ZacharyZurloMSFT/AI-Readiness-Assessment/actions/workflows/validate.yml/badge.svg)](https://github.com/ZacharyZurloMSFT/AI-Readiness-Assessment/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Assess your Azure environment's readiness for **Microsoft Foundry**-based AI workloads. This [Azure Monitor Workbook](https://learn.microsoft.com/azure/azure-monitor/visualize/workbooks-overview) evaluates resources across **9 capability pillars** aligned with the [Azure AI Landing Zone](https://learn.microsoft.com/azure/cloud-adoption-framework/scenarios/ai/platform/landing-zones) using **Azure Resource Graph** queries and presents an interactive, shareable dashboard — no agents, no code, no external dependencies.
 
-> **Scope:** This assessment is focused on **Microsoft Foundry** (`microsoft.cognitiveservices/accounts` with `kind = AIServices`). Standalone Azure OpenAI accounts and classic AI Hub workspaces (`microsoft.machinelearningservices/workspaces`) are intentionally excluded — Microsoft Foundry is the unified successor.
+> **Scope:** This assessment is focused on **Microsoft Foundry** (`microsoft.cognitiveservices/accounts` with `kind = AIServices`). Standalone Azure OpenAI account signals are intentionally excluded — Microsoft Foundry is the unified successor.
 
-Some data-plane signals (agents, evaluation runs, threads, Conditional Access, MFA, PIM, quota/PTU usage, budgets) are **not exposed via Azure Resource Graph** and are surfaced as Manual/API checks with the exact REST call documented in the workbook.
+Some control-plane and data-plane signals (custom guardrail policies, Conditional Access, MFA, PIM, quota/PTU usage, budgets) are **not exposed via Azure Resource Graph** and are surfaced as Manual/API checks with the exact REST call documented in the workbook.
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FZacharyZurloMSFT%2FAI-Readiness-Assessment%2Fmain%2Fworkbook%2Fazuredeploy.json)
 
@@ -17,22 +17,22 @@ Some data-plane signals (agents, evaluation runs, threads, Conditional Access, M
 
 | # | Pillar | Max | Queries | Coverage |
 |:-:|--------|:---:|:-------:|----------|
-| 1 | **Foundry Inventory** | 8 | 5 | Foundry accounts, projects, connections, capability hosts (agent service), manual callout for model deployments / agents / evaluations |
+| 1 | **Foundry Inventory** | 6 | 4 | Foundry accounts, projects, and informational ARG-indexed connections/capability hosts for Standard tier |
 | 2 | **Data Management & Governance** | 7 | 8 | Purview, Databricks (Unity Catalog), Data Factory + Git, ADLS Gen2, Microsoft Fabric, lifecycle policies |
 | 3 | **Retrieval & Context Enablement** | 5 | 5 | AI Search, Redis, Cosmos DB / PostgreSQL pgvector, Document Intelligence |
-| 4 | **Responsible AI** | 5 | 7 | **Foundry guardrails (RAI policies)**, RaiMonitor capability, guardrail feature coverage (jailbreak, prompt shield, groundedness, agent safety), per-deployment guardrail assignment (manual), policy controls detail (manual), red teaming (manual), standalone Content Safety (informational) |
+| 4 | **Responsible AI** | 2 | 6 | **Foundry guardrails (RAI policies)**, RaiMonitor capability, guardrail feature coverage (jailbreak, prompt shield, groundedness, agent safety), per-deployment guardrail assignment (manual), policy controls detail (manual), red teaming (manual) |
 | 5 | **Identity & Access** | 5 | 7 | Disable local auth, Managed Identity coverage, RBAC analysis, Conditional Access / MFA / PIM / Entra Agent ID (manual) |
 | 6 | **Network & Security** | 12 | 15 | Private endpoints, network injection mode, CMK, Key Vault hardening, VNets, NSGs, Firewall, WAF, Private DNS, Bastion, ACR, APIM, Defender, Sentinel |
 | 7 | **Policy & Compliance** | 3 | 5 | AI policy assignments, compliance state, Defender on AI recommendations, Compliance Manager, regulatory initiatives |
 | 8 | **Cost & Operations** | 5 | 4 | Multi-region foundry, Container Apps Dynamic Sessions, quotas / PTUs (manual), budgets (manual) |
 | 9 | **Monitoring & Operations** | 5 | 6 | App Insights, diagnostics coverage, metric alerts, LAW routing, quality / online evaluators |
-|   | **Total** | **55** | **62** | 48 automated ARG queries + 14 Manual/API checks |
+|   | **Total** | **50** | **60** | 46 automated ARG queries + 14 Manual/API checks |
 
 For the full list of queries with their IDs and descriptions, see [queries.md](queries.md).
 
 ### Scoring Logic
 
-Each pillar score is computed by summing weighted points from a fixed Foundry-aligned signal set, then normalising to a percentage of the pillar's maximum. The overall score is the sum of weighted points divided by **55**.
+Each pillar score is computed by summing weighted points from a fixed Foundry-aligned signal set, then normalising to a percentage of the pillar's maximum. The overall score is the sum of weighted points divided by **50**.
 
 | Signal | Pillar | Points | Trigger |
 |--------|:------:|:------:|---------|
@@ -40,10 +40,7 @@ Each pillar score is computed by summing weighted points from a fixed Foundry-al
 | Foundry account has identity | FDY | +1 | Managed identity assigned |
 | Foundry project exists | FDY | 2 | `accounts/projects` present |
 | Project identity | FDY | +1 | Project principalId set |
-| Foundry connections | FDY | 1 | Any connection configured |
-| Capability host (agent service) | FDY | 1 | `capabilityHosts` present |
 | Foundry default guardrails | RAI | 2 | Any Foundry account (Microsoft.Default policy is automatic) |
-| Custom guardrail policy | RAI | 3 | Custom `raiPolicies` defined on Foundry |
 | Purview | DMG | 3 | Account present |
 | Databricks | DMG | 2 | Workspace present |
 | Data Factory | DMG | 1–2 | +1 base, +1 if Git configured |
@@ -71,7 +68,7 @@ Each pillar score is computed by summing weighted points from a fixed Foundry-al
 | App Insights | MON | 3 | Component present |
 | Foundry identity | MON | 2 | Identity on Foundry account |
 
-**Per-pillar score** = pillar weighted points ÷ pillar max × 100%. **Overall AI Readiness Score** = total weighted points ÷ 55 × 100%.
+**Per-pillar score** = pillar weighted points ÷ pillar max × 100%. **Overall AI Readiness Score** = total weighted points ÷ 50 × 100%.
 
 | Score Range | Color | Status |
 |:-----------:|:-----:|--------|
@@ -91,7 +88,7 @@ Each pillar score is computed by summing weighted points from a fixed Foundry-al
 Click the button above, or use the direct link:
 
 ```
-https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkrishna-sunkavalli%2Fai-platform-readiness-assessment%2Fmain%2Fworkbook%2Fazuredeploy.json
+https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FZacharyZurloMSFT%2FAI-Readiness-Assessment%2Fmain%2Fworkbook%2Fazuredeploy.json
 ```
 
 ### Option 2: Azure CLI
