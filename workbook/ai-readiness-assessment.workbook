@@ -1,0 +1,2058 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "<div style='padding:16px 20px;background:#eff6fc;border-left:3px solid #0078d4;border-radius:6px;margin-bottom:8px'><h2 style='margin:0 0 4px 0;color:#0078d4;font-size:18px'>Microsoft Foundry Readiness Assessment</h2><p style='margin:0;font-size:13px;color:#605e5c'>Evaluates your Azure environment for Microsoft Foundry-based AI workloads across nine readiness pillars aligned with the Azure AI Landing Zone. Select subscription(s) to run the assessment.</p></div>"
+      },
+      "name": "header"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "subscription",
+            "version": "KqlParameterItem/1.0",
+            "name": "Subscription",
+            "type": 6,
+            "isRequired": true,
+            "multiSelect": true,
+            "quote": "'",
+            "delimiter": ",",
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::all"
+              ],
+              "includeAll": true,
+              "showDefault": false
+            },
+            "defaultValue": "value::all"
+          },
+          {
+            "id": "pillar-bars-param",
+            "version": "KqlParameterItem/1.0",
+            "name": "PillarBarsHtml",
+            "type": 1,
+            "query": "resources\n| summarize\n    purview=countif(type=='microsoft.purview/accounts'),\n    databricks=countif(type=='microsoft.databricks/workspaces'),\n    adf=countif(type=='microsoft.datafactory/factories'),\n    adf_git=countif(type=='microsoft.datafactory/factories' and isnotnull(properties.repoConfiguration.repositoryName)),\n    adls=countif(type=='microsoft.storage/storageaccounts' and tobool(properties.isHnsEnabled)==true),\n    aisearch=countif(type=='microsoft.search/searchservices'),\n    redis=countif(type in ('microsoft.cache/redis','microsoft.cache/redisenterprise')),\n    cosmos=countif(type=='microsoft.documentdb/databaseaccounts'),\n    docint=countif(type=='microsoft.cognitiveservices/accounts' and kind in ('FormRecognizer','DocumentIntelligence')),\n    foundry=countif(type=='microsoft.cognitiveservices/accounts' and kind=~'AIServices'),\n    foundry_id=countif(type=='microsoft.cognitiveservices/accounts' and kind=~'AIServices' and isnotnull(identity)),\n    foundry_nokey=countif(type=='microsoft.cognitiveservices/accounts' and kind=~'AIServices' and tobool(properties.disableLocalAuth)==true),\n    foundry_cmk=countif(type=='microsoft.cognitiveservices/accounts' and kind=~'AIServices' and isnotnull(properties.encryption.keyVaultProperties)),\n    foundry_regions=dcountif(location, type=='microsoft.cognitiveservices/accounts' and kind=~'AIServices'),\n    fproject=countif(type=~'microsoft.cognitiveservices/accounts/projects'),\n    fproject_id=countif(type=~'microsoft.cognitiveservices/accounts/projects' and isnotnull(identity.principalId)),\n    capability_host=countif(type=~'microsoft.cognitiveservices/accounts/capabilityhosts' or type=~'microsoft.cognitiveservices/accounts/projects/capabilityhosts'),\n    fconnection=countif(type=~'microsoft.cognitiveservices/accounts/connections' or type=~'microsoft.cognitiveservices/accounts/projects/connections'),\n    contentsafety=countif(type=='microsoft.cognitiveservices/accounts' and kind=~'ContentSafety'),\n    custom_rai=countif(type=~'microsoft.cognitiveservices/accounts/raipolicies'),\n    keyvault=countif(type=='microsoft.keyvault/vaults'),\n    kv_hardened=countif(type=='microsoft.keyvault/vaults' and tobool(properties.enableRbacAuthorization)==true and tobool(properties.enableSoftDelete)==true and tobool(properties.enablePurgeProtection)==true),\n    foundry_pe=countif(type=='microsoft.cognitiveservices/accounts' and kind=~'AIServices' and array_length(properties.privateEndpointConnections) > 0),\n    apim=countif(type=='microsoft.apimanagement/service'),\n    apim_mi=countif(type=='microsoft.apimanagement/service' and isnotnull(identity)),\n    appinsights=countif(type=='microsoft.insights/components'),\n    vnet=countif(type=='microsoft.network/virtualnetworks'),\n    nsg=countif(type=='microsoft.network/networksecuritygroups'),\n    firewall=countif(type=='microsoft.network/azurefirewalls'),\n    appgw_waf=countif(type=='microsoft.network/applicationgateways' and isnotnull(properties.webApplicationFirewallConfiguration)),\n    bastion=countif(type=='microsoft.network/bastionhosts'),\n    pdz_aiservices=countif(type=='microsoft.network/privatednszones' and (name has 'cognitiveservices' or name has 'openai' or name has 'azure-api'))\n| extend Pillars = pack_array(\n        strcat('Foundry Inventory|1|8|', tostring(iff(foundry>0,2,0) + iff(foundry_id>0,1,0) + iff(fproject>0,2,0) + iff(fproject_id>0,1,0) + iff(fconnection>0,1,0) + iff(capability_host>0,1,0))),\n        strcat('Data Management & Governance|2|7|', tostring(iff(purview>0,3,0) + iff(databricks>0,2,0) + iff(adf_git>0,2,iff(adf>0,1,0)))),\n        strcat('Retrieval & Context Enablement|3|5|', tostring(iff(aisearch>0,2,0) + iff(redis>0,1,0) + iff(cosmos>0,1,0) + iff(docint>0,1,0))),\n        strcat('Responsible AI|4|5|', tostring(iff(foundry>0,2,0) + iff(custom_rai>0,3,0))),\n        strcat('Identity & Access|5|5|', tostring(iff(foundry_id>0,2,0) + iff(apim_mi>0,1,iff(apim>0,0,0)) + iff(foundry_nokey>0,2,0))),\n        strcat('Network & Security|6|12|', tostring(iff(kv_hardened>0,3,iff(keyvault>0,1,0)) + iff(foundry_pe>0,2,0) + iff(apim>0,2,0) + iff(pdz_aiservices>0,1,0) + iff(firewall>0,1,0) + iff(appgw_waf>0,1,0) + iff(bastion>0,1,0) + iff(foundry_cmk>0,1,0))),\n        strcat('Policy & Compliance|7|3|', tostring(iff(foundry_pe>0,1,0) + iff(kv_hardened>0,1,0) + iff(foundry_cmk>0,1,0))),\n        strcat('Cost & Operations|8|5|', tostring(iff(foundry_regions>=2,2,iff(foundry>0,1,0)) + iff(appinsights>0,2,0) + iff(apim>0,1,0))),\n        strcat('Monitoring & Operations|9|5|', tostring(iff(appinsights>0,3,0) + iff(foundry_id>0,2,0))))\n| mv-expand Pillars to typeof(string)\n| extend parts = split(Pillars, '|')\n| extend Pillar=tostring(parts[0]), SortOrder=toint(parts[1]), MaxScore=toint(parts[2]), WeightedScore=toint(parts[3])\n| extend ScorePercent=toint(round(100.0*WeightedScore/MaxScore, 0))\n| order by SortOrder asc\n| extend BarColor=iff(ScorePercent>=75, '#00b294', iff(ScorePercent>=40, '#ff8c00', '#e81123'))\n| extend row=strcat('<div style=\"display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f3f2f1\"><div style=\"min-width:240px;font-size:13px;color:#0078d4;font-weight:600\">', Pillar, '</div><div style=\"flex:1;height:12px;background:#edebe9;border-radius:2px;overflow:hidden;min-width:120px\"><div style=\"height:100%;width:', tostring(ScorePercent), '%;background:', BarColor, ';border-radius:2px\"></div></div><span style=\"min-width:44px;text-align:right;font-size:13px;font-weight:600;color:#323130\">', tostring(ScorePercent), '%</span></div>')\n| summarize allrows=strcat_array(make_list(row), '')\n| project allrows",
+            "isHiddenWhenLocked": true,
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources",
+            "crossComponentResources": [
+              "{Subscription}"
+            ]
+          },
+          {
+            "id": "score-card-param",
+            "version": "KqlParameterItem/1.0",
+            "name": "ScoreCardHtml",
+            "type": 1,
+            "query": "resources\n| summarize\n    purview=countif(type=='microsoft.purview/accounts'),\n    databricks=countif(type=='microsoft.databricks/workspaces'),\n    adf=countif(type=='microsoft.datafactory/factories'),\n    adf_git=countif(type=='microsoft.datafactory/factories' and isnotnull(properties.repoConfiguration.repositoryName)),\n    adls=countif(type=='microsoft.storage/storageaccounts' and tobool(properties.isHnsEnabled)==true),\n    aisearch=countif(type=='microsoft.search/searchservices'),\n    redis=countif(type in ('microsoft.cache/redis','microsoft.cache/redisenterprise')),\n    cosmos=countif(type=='microsoft.documentdb/databaseaccounts'),\n    docint=countif(type=='microsoft.cognitiveservices/accounts' and kind in ('FormRecognizer','DocumentIntelligence')),\n    foundry=countif(type=='microsoft.cognitiveservices/accounts' and kind=~'AIServices'),\n    foundry_id=countif(type=='microsoft.cognitiveservices/accounts' and kind=~'AIServices' and isnotnull(identity)),\n    foundry_nokey=countif(type=='microsoft.cognitiveservices/accounts' and kind=~'AIServices' and tobool(properties.disableLocalAuth)==true),\n    foundry_cmk=countif(type=='microsoft.cognitiveservices/accounts' and kind=~'AIServices' and isnotnull(properties.encryption.keyVaultProperties)),\n    foundry_regions=dcountif(location, type=='microsoft.cognitiveservices/accounts' and kind=~'AIServices'),\n    fproject=countif(type=~'microsoft.cognitiveservices/accounts/projects'),\n    fproject_id=countif(type=~'microsoft.cognitiveservices/accounts/projects' and isnotnull(identity.principalId)),\n    capability_host=countif(type=~'microsoft.cognitiveservices/accounts/capabilityhosts' or type=~'microsoft.cognitiveservices/accounts/projects/capabilityhosts'),\n    fconnection=countif(type=~'microsoft.cognitiveservices/accounts/connections' or type=~'microsoft.cognitiveservices/accounts/projects/connections'),\n    contentsafety=countif(type=='microsoft.cognitiveservices/accounts' and kind=~'ContentSafety'),\n    custom_rai=countif(type=~'microsoft.cognitiveservices/accounts/raipolicies'),\n    keyvault=countif(type=='microsoft.keyvault/vaults'),\n    kv_hardened=countif(type=='microsoft.keyvault/vaults' and tobool(properties.enableRbacAuthorization)==true and tobool(properties.enableSoftDelete)==true and tobool(properties.enablePurgeProtection)==true),\n    foundry_pe=countif(type=='microsoft.cognitiveservices/accounts' and kind=~'AIServices' and array_length(properties.privateEndpointConnections) > 0),\n    apim=countif(type=='microsoft.apimanagement/service'),\n    apim_mi=countif(type=='microsoft.apimanagement/service' and isnotnull(identity)),\n    appinsights=countif(type=='microsoft.insights/components'),\n    vnet=countif(type=='microsoft.network/virtualnetworks'),\n    nsg=countif(type=='microsoft.network/networksecuritygroups'),\n    firewall=countif(type=='microsoft.network/azurefirewalls'),\n    appgw_waf=countif(type=='microsoft.network/applicationgateways' and isnotnull(properties.webApplicationFirewallConfiguration)),\n    bastion=countif(type=='microsoft.network/bastionhosts'),\n    pdz_aiservices=countif(type=='microsoft.network/privatednszones' and (name has 'cognitiveservices' or name has 'openai' or name has 'azure-api'))\n| extend TotalWeighted = (iff(foundry>0,2,0) + iff(foundry_id>0,1,0) + iff(fproject>0,2,0) + iff(fproject_id>0,1,0) + iff(fconnection>0,1,0) + iff(capability_host>0,1,0)) + (iff(purview>0,3,0) + iff(databricks>0,2,0) + iff(adf_git>0,2,iff(adf>0,1,0))) + (iff(aisearch>0,2,0) + iff(redis>0,1,0) + iff(cosmos>0,1,0) + iff(docint>0,1,0)) + (iff(foundry>0,2,0) + iff(custom_rai>0,3,0)) + (iff(foundry_id>0,2,0) + iff(apim_mi>0,1,iff(apim>0,0,0)) + iff(foundry_nokey>0,2,0)) + (iff(kv_hardened>0,3,iff(keyvault>0,1,0)) + iff(foundry_pe>0,2,0) + iff(apim>0,2,0) + iff(pdz_aiservices>0,1,0) + iff(firewall>0,1,0) + iff(appgw_waf>0,1,0) + iff(bastion>0,1,0) + iff(foundry_cmk>0,1,0)) + (iff(foundry_pe>0,1,0) + iff(kv_hardened>0,1,0) + iff(foundry_cmk>0,1,0)) + (iff(foundry_regions>=2,2,iff(foundry>0,1,0)) + iff(appinsights>0,2,0) + iff(apim>0,1,0)) + (iff(appinsights>0,3,0) + iff(foundry_id>0,2,0))\n| extend MaxTotal = 55\n| extend S = toint(round(100.0 * TotalWeighted / MaxTotal, 0))\n| extend ScoreColor=iff(S>=80, '#107c10', iff(S>=50, '#d69900', '#d13438'))\n| extend RingPct = S * 2.51327\n| extend html=strcat('<div style=\"display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 8px\"><div style=\"font-size:13px;font-weight:600;color:#605e5c;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px\">AI Readiness Score</div><div style=\"position:relative;width:160px;height:160px\"><svg viewBox=\"0 0 100 100\" style=\"transform:rotate(-90deg)\"><circle cx=\"50\" cy=\"50\" r=\"40\" fill=\"none\" stroke=\"#edebe9\" stroke-width=\"8\"/><circle cx=\"50\" cy=\"50\" r=\"40\" fill=\"none\" stroke=\"', ScoreColor, '\" stroke-width=\"8\" stroke-dasharray=\"', tostring(RingPct), ' 251.327\" stroke-linecap=\"round\"/></svg><div style=\"position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center\"><div style=\"font-size:38px;font-weight:700;color:', ScoreColor, ';line-height:1\">', tostring(S), '%</div></div></div></div>')\n| project html",
+            "isHiddenWhenLocked": true,
+            "queryType": 1,
+            "resourceType": "microsoft.resourcegraph/resources",
+            "crossComponentResources": [
+              "{Subscription}"
+            ]
+          }
+        ],
+        "style": "pills"
+      },
+      "name": "parameters"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "Assessment Summary",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style=\"border:1px solid #edebe9;border-radius:8px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);height:100%\">{ScoreCardHtml}</div>"
+            },
+            "customWidth": "25",
+            "name": "overall-score-tile"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style=\"padding:0 4px\">\r\n\r\n**Readiness by Pillar**\r\n\r\n{PillarBarsHtml}\r\n</div>"
+            },
+            "customWidth": "75",
+            "name": "pillar-grid"
+          }
+        ]
+      },
+      "name": "summary-group"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "AI Resource Landscape",
+        "expandable": true,
+        "expanded": false,
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Geographic distribution of Foundry-relevant resources across selected subscriptions. Informational; does not affect the score.</div>"
+            },
+            "name": "landscape-description"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type in~ (\n    'microsoft.cognitiveservices/accounts',\n    'microsoft.cognitiveservices/accounts/projects',\n    'microsoft.search/searchservices',\n    'microsoft.cache/redis',\n    'microsoft.cache/redisenterprise',\n    'microsoft.documentdb/databaseaccounts',\n    'microsoft.purview/accounts',\n    'microsoft.databricks/workspaces',\n    'microsoft.datafactory/factories',\n    'microsoft.apimanagement/service',\n    'microsoft.insights/components'\n  )\n| where type !~ 'microsoft.cognitiveservices/accounts'\n    or kind in~ ('AIServices','ContentSafety','FormRecognizer','DocumentIntelligence')\n| summarize resourceCount = count() by location\n| order by resourceCount desc",
+              "size": 3,
+              "title": "AI Resources by Region",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "map",
+              "mapSettings": {
+                "locInfo": "AzureLoc",
+                "locInfoColumn": "location",
+                "sizeSettings": "resourceCount",
+                "sizeAggregation": "Sum",
+                "legendMetric": "resourceCount",
+                "legendAggregation": "Sum",
+                "itemColorSettings": {
+                  "nodeColorField": "resourceCount",
+                  "colorAggregation": "Sum",
+                  "type": "heatmap",
+                  "heatmapPalette": "greenRed"
+                }
+              },
+              "noDataMessage": "No AI resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4
+            },
+            "name": "landscape-map"
+          }
+        ]
+      },
+      "name": "landscape-group"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "Foundry Inventory",
+        "expandable": true,
+        "expanded": true,
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Inventory of Microsoft Foundry resources, projects, model deployments, connections, and agent service capability hosts. Foundry is identified as <code>microsoft.cognitiveservices/accounts</code> with <code>kind = AIServices</code>.</div>"
+            },
+            "name": "fdy-description"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>FDY-001</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Accounts</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Microsoft Foundry account inventory with identity, network, encryption, and auth configuration.</span></div>"
+            },
+            "name": "fdy-001-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.cognitiveservices/accounts' and kind =~ 'AIServices'\n| extend hasIdentity = isnotnull(identity),\n         disableLocalAuth = tobool(properties.disableLocalAuth),\n         publicAccess = tostring(properties.publicNetworkAccess),\n         cmkEnabled = isnotnull(properties.encryption.keyVaultProperties),\n         networkInjection = tostring(properties.networkInjections),\n         peCount = array_length(properties.privateEndpointConnections)\n| project name, location, hasIdentity, disableLocalAuth, publicAccess, cmkEnabled, peCount, networkInjection, subscriptionId",
+              "size": 3,
+              "title": "Foundry Accounts",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "hasIdentity",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "true",
+                          "representation": "success",
+                          "text": "Yes"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "warning",
+                          "text": "No"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "disableLocalAuth",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "true",
+                          "representation": "success",
+                          "text": "Disabled"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "warning",
+                          "text": "Enabled"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "cmkEnabled",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "true",
+                          "representation": "success",
+                          "text": "Yes (CMK)"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "warning",
+                          "text": "MMK"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "fdy-001-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>FDY-002</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Projects</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Projects organize models, data, agents, and evaluations within a Foundry account.</span></div>"
+            },
+            "name": "fdy-002-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type =~ 'microsoft.cognitiveservices/accounts/projects'\n| extend hasIdentity = isnotnull(identity.principalId),\n         endpoint = tostring(properties.endpoints)\n| project name, location, hasIdentity, endpoint, subscriptionId",
+              "size": 3,
+              "title": "Foundry Projects",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "hasIdentity",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "true",
+                          "representation": "success",
+                          "text": "Yes"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "warning",
+                          "text": "No"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "fdy-002-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>FDY-003</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Connections</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Connections wire Foundry projects to AI Search, Storage, Cosmos, OpenAI, Bing, and other resources.</span></div>"
+            },
+            "name": "fdy-003-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type =~ 'microsoft.cognitiveservices/accounts/connections'\n    or type =~ 'microsoft.cognitiveservices/accounts/projects/connections'\n| extend category = tostring(properties.category),\n         target = tostring(properties.target),\n         authType = tostring(properties.authType)\n| project name, category, target, authType, subscriptionId\n| order by category asc, name asc",
+              "size": 3,
+              "title": "Foundry Connections",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No Foundry connections found. Connections are required for RAG, agent tools, and external data integration.",
+              "noDataMessageStyle": 4
+            },
+            "name": "fdy-003-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>FDY-004</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Capability Hosts (Agent Service)</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Capability hosts indicate Foundry Agent Service is configured (storage + thread + vector store wiring).</span></div>"
+            },
+            "name": "fdy-004-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type =~ 'microsoft.cognitiveservices/accounts/capabilityhosts'\n    or type =~ 'microsoft.cognitiveservices/accounts/projects/capabilityhosts'\n| extend storageConn = tostring(properties.storageConnections),\n         vectorStoreConn = tostring(properties.vectorStoreConnections),\n         threadConn = tostring(properties.threadStorageConnections),\n         capabilityKind = tostring(properties.capabilityHostKind),\n         provisioningState = tostring(properties.provisioningState)\n| project name, capabilityKind, provisioningState, storageConn, vectorStoreConn, threadConn, subscriptionId",
+              "size": 3,
+              "title": "Capability Hosts",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No capability hosts found. Foundry Agent Service has not been configured for any project.",
+              "noDataMessageStyle": 4
+            },
+            "name": "fdy-004-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>FDY-005</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Model Deployments, Agents, Evaluations, Threads</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Foundry deployments and data-plane resources are not reliably exposed to Azure Resource Graph.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Use the Azure Cognitive Services management API to list model deployments, and the Foundry data-plane REST API for agents, evaluations, and threads. <br/><code>GET https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}/deployments?api-version=2024-10-01</code><br/><code>GET https://{account}.services.ai.azure.com/api/projects/{project}/agents?api-version=2025-05-01</code><br/><code>GET https://{account}.services.ai.azure.com/api/projects/{project}/evaluations?api-version=2025-05-01</code><br/><code>GET https://{account}.services.ai.azure.com/api/projects/{project}/threads?api-version=2025-05-01</code></div>"
+            },
+            "name": "fdy-005-header"
+          }
+        ]
+      },
+      "name": "foundry-inventory-group"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "Data Management & Governance",
+        "expandable": true,
+        "expanded": false,
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>DMG-001</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Purview Accounts</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Microsoft Purview &#x2014; Unified data governance platform.</span></div>"
+            },
+            "name": "dmg-001-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.purview/accounts'\n| project name, location, subscriptionId, properties",
+              "size": 3,
+              "title": "Purview Accounts",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4
+            },
+            "name": "dmg-001-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>DMG-002</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Purview Scan Rulesets</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Validate scan rulesets are configured for data discovery.</span></div>"
+            },
+            "name": "dmg-002-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.purview/accounts'\n| where isnotnull(properties.scanRulesets)\n| project name, location, subscriptionId, scanRulesets=properties.scanRulesets",
+              "size": 3,
+              "title": "Purview Scan Rulesets",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4
+            },
+            "name": "dmg-002-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>DMG-003</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Data Classification Rules</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Cloud connector configurations enabling data classification.</span></div>"
+            },
+            "name": "dmg-003-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.purview/accounts'\n| where isnotnull(properties.cloudConnectors)\n| project name, location, subscriptionId, properties",
+              "size": 3,
+              "title": "Data Classification Rules",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4
+            },
+            "name": "dmg-003-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>DMG-004</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Data Lineage Enablement</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Lineage endpoints for tracking data flow.</span></div>"
+            },
+            "name": "dmg-004-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.purview/accounts'\n| extend lineageEndpoint = tostring(properties.endpoints.lineage)\n| where isnotnull(lineageEndpoint)\n| project name, lineageEndpoint, location, subscriptionId",
+              "size": 3,
+              "title": "Data Lineage Enablement",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4
+            },
+            "name": "dmg-004-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>DMG-005</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Unity Catalog (Databricks)</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Azure Databricks workspaces for unified analytics governance.</span></div>"
+            },
+            "name": "dmg-005-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.databricks/workspaces'\n| extend unityCatalog = properties.parameters.enableNoPublicIp\n| project name, location, subscriptionId, properties",
+              "size": 3,
+              "title": "Databricks Workspaces",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4
+            },
+            "name": "dmg-005-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>DMG-006</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Data Factory ETL</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>ADF instances with Git integration.</span></div>"
+            },
+            "name": "dmg-006-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.datafactory/factories'\n| extend gitConfigured = isnotnull(properties.repoConfiguration.repositoryName),\n         globalParams = array_length(bag_keys(properties.globalParameters))\n| project name, location, subscriptionId, gitConfigured, globalParams",
+              "size": 3,
+              "title": "Data Factories",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "gitConfigured",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "true",
+                          "representation": "success",
+                          "text": "Yes"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "warning",
+                          "text": "No"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "dmg-006-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>DMG-007</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Lakehouse Presence</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>ADLS Gen2, Databricks, or Microsoft Fabric for enterprise data lake.</span></div>"
+            },
+            "name": "dmg-007-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type in (\n    'microsoft.storage/storageaccounts',\n    'microsoft.databricks/workspaces',\n    'microsoft.fabric/capacities'\n  )\n| extend layer = case(\n    type == 'microsoft.storage/storageaccounts' and properties.isHnsEnabled == true, 'ADLS Gen2',\n    type == 'microsoft.databricks/workspaces', 'Databricks',\n    type == 'microsoft.fabric/capacities', 'Microsoft Fabric',\n    'Other'\n  )\n| where layer != 'Other'\n| project name, layer, location, subscriptionId",
+              "size": 3,
+              "title": "Lakehouse Presence",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4
+            },
+            "name": "dmg-007-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>DMG-008</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>ADLS Lifecycle Policies</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Retention and lifecycle management on ADLS Gen2.</span></div>"
+            },
+            "name": "dmg-008-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.storage/storageaccounts'\n| where kind == 'StorageV2' and properties.isHnsEnabled == true\n| extend lifecyclePolicy = isnotnull(properties.managementPolicies)\n| project name, location, subscriptionId, lifecyclePolicy",
+              "size": 3,
+              "title": "ADLS Gen2 Lifecycle Policies",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4
+            },
+            "name": "dmg-008-query"
+          }
+        ]
+      },
+      "name": "dmg-group"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "Retrieval & Context Enablement",
+        "expandable": true,
+        "expanded": false,
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RCE-001</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>AI Search</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Azure AI Search &#x2014; Semantic and vector search capabilities.</span></div>"
+            },
+            "name": "rce-001-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.search/searchservices'\n| extend sku = tostring(sku.name),\n         semanticSearch = tostring(properties.semanticSearch),\n         replicaCount = toint(properties.replicaCount),\n         partitionCount = toint(properties.partitionCount),\n         publicAccess = properties.publicNetworkAccess,\n         status = tostring(properties.status)\n| project name, sku, semanticSearch, replicaCount, partitionCount, publicAccess, status, subscriptionId",
+              "size": 3,
+              "title": "AI Search Services",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "status",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "running",
+                          "representation": "success",
+                          "text": "Running"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "error",
+                          "text": "{0}"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "rce-001-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RCE-002</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Redis Cache</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Azure Cache for Redis &#x2014; Semantic / response caching.</span></div>"
+            },
+            "name": "rce-002-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.cache/redis' or type == 'microsoft.cache/redisenterprise'\n| extend sku = tostring(sku.name), capacity = toint(sku.capacity)\n| project name, sku, capacity, location, subscriptionId",
+              "size": 3,
+              "title": "Redis Cache",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4
+            },
+            "name": "rce-002-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RCE-003</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Cosmos DB / PostgreSQL</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Vector-capable databases for RAG patterns.</span></div>"
+            },
+            "name": "rce-003-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.documentdb/databaseaccounts'\n    or (type == 'microsoft.dbforpostgresql/flexibleservers')\n| extend dbKind = case(\n    type == 'microsoft.documentdb/databaseaccounts', 'Cosmos DB',\n    type == 'microsoft.dbforpostgresql/flexibleservers', 'PostgreSQL Flexible',\n    'Other')\n| extend vectorSearch = properties.capabilities has 'EnableNoSQLVectorSearch'\n| project name, dbKind, vectorSearch, location, subscriptionId",
+              "size": 3,
+              "title": "Cosmos DB / PostgreSQL",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "vectorSearch",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "true",
+                          "representation": "success",
+                          "text": "Enabled"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "warning",
+                          "text": "Not Enabled"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "rce-003-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RCE-004</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Vector Stores</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>All vector-capable stores: AI Search, Cosmos DB, PostgreSQL.</span></div>"
+            },
+            "name": "rce-004-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.search/searchservices'\n    or (type == 'microsoft.documentdb/databaseaccounts' and properties.capabilities has 'EnableNoSQLVectorSearch')\n    or (type == 'microsoft.dbforpostgresql/flexibleservers')\n| extend storeType = case(\n    type == 'microsoft.search/searchservices', 'AI Search',\n    type == 'microsoft.documentdb/databaseaccounts', 'Cosmos DB (vector)',\n    type == 'microsoft.dbforpostgresql/flexibleservers', 'PostgreSQL (pgvector)',\n    'Other')\n| project name, storeType, location, subscriptionId",
+              "size": 3,
+              "title": "Vector Stores",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4
+            },
+            "name": "rce-004-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RCE-005</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Document Intelligence</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Azure AI Document Intelligence &#x2014; OCR / document processing.</span></div>"
+            },
+            "name": "rce-005-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.cognitiveservices/accounts'\n| where kind == 'FormRecognizer' or kind == 'DocumentIntelligence'\n| extend sku = tostring(sku.name), publicAccess = properties.publicNetworkAccess\n| project name, kind, sku, publicAccess, location, subscriptionId",
+              "size": 3,
+              "title": "Document Intelligence",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4
+            },
+            "name": "rce-005-query"
+          }
+        ]
+      },
+      "name": "rce-group"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "Responsible AI",
+        "expandable": true,
+        "expanded": false,
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Microsoft Foundry guardrails are <strong>RAI policies</strong> that wrap every model deployment and agent. Every Foundry deployment automatically inherits the built-in <code>Microsoft.Default</code> policy (Hate, Sexual, Self-Harm, Violence at medium severity, plus Jailbreak and Indirect-Attack shields). Custom policies layer additional controls (Protected Material, Groundedness, Custom Categories, etc.) and tighter severity thresholds. This pillar checks that those Foundry-native guardrails are present and customised; the standalone Content Safety service is shown for reference only.</div>"
+            },
+            "name": "rai-description"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RAI-001</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Guardrail Policies</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Custom RAI (guardrail) policies defined on Foundry accounts &#x2014; layered on top of Microsoft.Default.</span></div>"
+            },
+            "name": "rai-001-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type =~ 'microsoft.cognitiveservices/accounts/raipolicies'\n| extend parentAccount = tostring(split(id, '/')[8]),\n         mode = tostring(properties.mode),\n         basePolicyName = tostring(properties.basePolicyName),\n         policyType = tostring(properties.type)\n| project parentAccount, policyName=name, mode, basePolicyName, policyType, subscriptionId\n| order by parentAccount asc, policyName asc",
+              "size": 3,
+              "title": "Foundry Guardrail Policies",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No custom guardrail policies found. All Foundry deployments are using the built-in Microsoft.Default policy only. Consider adding custom policies to enforce Protected Material, Groundedness, or Custom Categories.",
+              "noDataMessageStyle": 4
+            },
+            "name": "rai-001-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RAI-002</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Content Filter Capability</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Foundry accounts with the RaiMonitor capability available (required for guardrail enforcement at runtime).</span></div>"
+            },
+            "name": "rai-002-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type =~ 'microsoft.cognitiveservices/accounts' and kind =~ 'AIServices'\n| extend caps = properties.capabilities\n| mv-expand cap = caps\n| where tostring(cap.name) == 'RaiMonitor'\n| project name, kind, resourceGroup, subscriptionId, raiMonitor = 'Available'",
+              "size": 3,
+              "title": "Foundry Content Filter Capability",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No Foundry accounts expose the RaiMonitor capability. Default Microsoft.Default guardrails still apply at the model API level.",
+              "noDataMessageStyle": 4
+            },
+            "name": "rai-002-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RAI-003</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Guardrail Feature Coverage</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Built-in safety features available on each Foundry account (jailbreak, prompt shield, groundedness, agent safety, etc.).</span></div>"
+            },
+            "name": "rai-003-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type =~ 'microsoft.cognitiveservices/accounts'\n| where kind =~ 'AIServices'\n| extend rules = properties.callRateLimit.rules\n| mv-expand rule = rules\n| extend ruleKey = tostring(rule.key)\n| where ruleKey in (\n    'ContentSafety.TextJailbreak',\n    'ContentSafety.TextShieldPrompt',\n    'ContentSafety.TextProtectedMaterial',\n    'ContentSafety.TextGroundedDetection',\n    'ContentSafety.Text',\n    'ContentSafety.Image',\n    'ContentSafety.RaiPoliciesAPI',\n    'ContentSafety.Provenance.Detect',\n    'ContentSafety.AgentTaskAdherence',\n    'ContentSafety.TextCustomCategories'\n  )\n| extend feature = case(\n    ruleKey == 'ContentSafety.TextJailbreak', 'Jailbreak Detection',\n    ruleKey == 'ContentSafety.TextShieldPrompt', 'Prompt Shield',\n    ruleKey == 'ContentSafety.TextProtectedMaterial', 'Protected Material',\n    ruleKey == 'ContentSafety.TextGroundedDetection', 'Groundedness Detection',\n    ruleKey == 'ContentSafety.Text', 'Text Moderation',\n    ruleKey == 'ContentSafety.Image', 'Image Moderation',\n    ruleKey == 'ContentSafety.RaiPoliciesAPI', 'RAI Policies',\n    ruleKey == 'ContentSafety.Provenance.Detect', 'Content Provenance',\n    ruleKey == 'ContentSafety.AgentTaskAdherence', 'Agent Safety',\n    ruleKey == 'ContentSafety.TextCustomCategories', 'Custom Categories',\n    '')\n| project foundryAccount=name, feature, subscriptionId\n| order by foundryAccount asc, feature asc",
+              "size": 3,
+              "title": "Foundry Guardrail Features",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No Foundry guardrail features detected.",
+              "noDataMessageStyle": 4
+            },
+            "name": "rai-003-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RAI-004</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Per-Deployment Guardrail Assignment</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Verify which guardrail policy is bound to each model deployment and agent.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Model deployments are not reliably indexed in Azure Resource Graph. Use the management API per Foundry account:<br/><code>GET https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}/deployments?api-version=2024-10-01</code><br/>Inspect <code>properties.raiPolicyName</code> on each deployment. <code>Microsoft.Default</code> = built-in; anything else = custom guardrail. Agents inherit the policy from the underlying model deployment unless overridden in the agent definition.</div>"
+            },
+            "name": "rai-004-header"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RAI-005</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Guardrail Policy Controls Detail</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Inspect the actual risks, severity thresholds, and intervention points configured on each custom policy.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> <code>GET https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}/raiPolicies/{policy}?api-version=2024-10-01</code><br/>Review <code>properties.contentFilters</code> for filter category (Hate, Sexual, Violence, Self-Harm, Jailbreak, Protected Material, Groundedness, Custom Categories), <code>severityThreshold</code>, and <code>source</code> (Prompt vs Completion).</div>"
+            },
+            "name": "rai-005-header"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RAI-006</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Red Teaming Runs</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Check for completed red teaming runs and Attack Success Rate (ASR) metrics.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Use Foundry portal or API to verify red teaming runs.<br/><code>GET https://{account}.services.ai.azure.com/api/projects/{project}/redteams/runs?api-version=2025-05-01</code></div>"
+            },
+            "name": "rai-006-header"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>RAI-007</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Standalone Content Safety Services</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Dedicated Content Safety service instances &#x2014; informational only; Foundry guardrails are the primary control plane.</span></div>"
+            },
+            "name": "rai-007-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type =~ 'microsoft.cognitiveservices/accounts'\n| where kind =~ 'ContentSafety'\n| extend sku = tostring(sku.name), publicAccess = tostring(properties.publicNetworkAccess)\n| project name, sku, publicAccess, location, resourceGroup, subscriptionId",
+              "size": 3,
+              "title": "Standalone Content Safety",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No standalone Content Safety services found. This is expected when Foundry guardrails are used; the Foundry-embedded Content Safety capability covers the same features.",
+              "noDataMessageStyle": 4
+            },
+            "name": "rai-007-query"
+          }
+        ]
+      },
+      "name": "rai-group"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "Identity & Access",
+        "expandable": true,
+        "expanded": false,
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Identity and access posture for Foundry resources. Includes RBAC analysis, key-based auth detection, and manual callouts for Conditional Access, MFA, PIM, and Entra Agent ID inventory.</div>"
+            },
+            "name": "iam-description"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>IAM-001</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Account Authentication</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Disable local auth (key-based) on Foundry accounts &#x2014; Entra ID only is recommended.</span></div>"
+            },
+            "name": "iam-001-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.cognitiveservices/accounts' and kind =~ 'AIServices'\n| extend disableLocalAuth = tobool(properties.disableLocalAuth),\n         publicAccess = tostring(properties.publicNetworkAccess)\n| project name, disableLocalAuth, publicAccess, location, subscriptionId",
+              "size": 3,
+              "title": "Foundry Account Auth",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "disableLocalAuth",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "true",
+                          "representation": "success",
+                          "text": "Entra-only"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "warning",
+                          "text": "Keys allowed"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "iam-001-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>IAM-002</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Managed Identity Coverage</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Foundry accounts, projects, AI Search, and APIM with managed identity.</span></div>"
+            },
+            "name": "iam-002-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where (type == 'microsoft.cognitiveservices/accounts' and kind =~ 'AIServices')\n    or type =~ 'microsoft.cognitiveservices/accounts/projects'\n    or type == 'microsoft.search/searchservices'\n    or type == 'microsoft.apimanagement/service'\n| extend hasManagedIdentity = isnotnull(identity)\n| extend resourceType = case(\n    type == 'microsoft.cognitiveservices/accounts', 'Foundry Account',\n    type =~ 'microsoft.cognitiveservices/accounts/projects', 'Foundry Project',\n    type == 'microsoft.search/searchservices', 'AI Search',\n    type == 'microsoft.apimanagement/service', 'APIM',\n    'Other')\n| summarize Total=count(), WithManagedIdentity=countif(hasManagedIdentity == true) by resourceType",
+              "size": 3,
+              "title": "Managed Identity Coverage",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "WithManagedIdentity",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "palette": "greenRed"
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "iam-002-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>IAM-003</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>RBAC Role Assignments on Foundry</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Counts of role assignments on Foundry accounts &#x2014; flag potential overprivileged access.</span></div>"
+            },
+            "name": "iam-003-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "authorizationresources\n| where type =~ 'microsoft.authorization/roleassignments'\n| extend scope = tolower(tostring(properties.scope))\n| where scope contains '/providers/microsoft.cognitiveservices/accounts/'\n| extend roleDefinitionId = tolower(tostring(properties.roleDefinitionId))\n| extend roleType = case(\n    roleDefinitionId endswith '8e3af657-a8ff-443c-a75c-2fe8c4bcb635', 'Owner',\n    roleDefinitionId endswith 'b24988ac-6180-42a0-ab88-20f7382dd24c', 'Contributor',\n    roleDefinitionId endswith 'acdd72a7-3385-48ef-bd42-f606fba81ae7', 'Reader',\n    roleDefinitionId endswith '64702f94-c441-49e6-a78b-ef80e0188fee', 'Azure AI Developer',\n    roleDefinitionId endswith 'a97b65f3-24c7-4388-baec-2e87135dc908', 'Cognitive Services User',\n    roleDefinitionId endswith '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd', 'Cognitive Services OpenAI User',\n    roleDefinitionId endswith 'a001fd3d-188f-4b5d-821b-7da978bf7442', 'Cognitive Services OpenAI Contributor',\n    'Other')\n| summarize Assignments=count() by roleType\n| order by Assignments desc",
+              "size": 3,
+              "title": "Foundry RBAC Assignments",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No Foundry RBAC assignments visible (requires Reader on the management group/subscription).",
+              "noDataMessageStyle": 4
+            },
+            "name": "iam-003-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>IAM-004</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Conditional Access Policies</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Risk-based Conditional Access for Foundry portal and APIs.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Conditional Access state lives in Microsoft Entra ID and is not surfaced in Azure Resource Graph. Review via Entra portal or Microsoft Graph:<br/><code>GET https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies</code></div>"
+            },
+            "name": "iam-004-header"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>IAM-005</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Multi-Factor Authentication</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; MFA enforcement for users accessing Foundry.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Verify via Microsoft Graph sign-in logs and authentication strength policies:<br/><code>GET https://graph.microsoft.com/v1.0/policies/authenticationStrengthPolicies</code></div>"
+            },
+            "name": "iam-005-header"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>IAM-006</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Privileged Identity Management</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Just-in-time elevation for Foundry administrative roles.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Inspect PIM eligible / active assignments for Cognitive Services Contributor / Azure AI Developer:<br/><code>GET https://graph.microsoft.com/v1.0/roleManagement/directory/roleAssignmentScheduleInstances</code></div>"
+            },
+            "name": "iam-006-header"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>IAM-007</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Microsoft Entra Agent ID Inventory</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Centralized AI agent identity catalog.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> List all AI agents created via Foundry / Copilot Studio:<br/><code>GET https://graph.microsoft.com/v1.0/servicePrincipals?$filter=tags/any(t:t eq 'WindowsAzureActiveDirectoryIntegratedApp') and tags/any(t:t eq 'AzureAIAgent')</code></div>"
+            },
+            "name": "iam-007-header"
+          }
+        ]
+      },
+      "name": "iam-group"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "Network & Security",
+        "expandable": true,
+        "expanded": false,
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Network architecture and security controls for Foundry workloads. Covers private endpoints, network injection, Key Vault hardening, Defender, APIM, and Azure landing zone network components (VNets, NSGs, Firewall, WAF, Bastion, Private DNS).</div>"
+            },
+            "name": "sec-description"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-001</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Private Networking</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Public access and private endpoint state on Foundry accounts and AI Search.</span></div>"
+            },
+            "name": "sec-001-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where (type == 'microsoft.cognitiveservices/accounts' and kind in~ ('AIServices','ContentSafety','FormRecognizer','DocumentIntelligence'))\n    or type == 'microsoft.search/searchservices'\n    or type == 'microsoft.storage/storageaccounts'\n    or type == 'microsoft.cache/redis'\n| extend publicAccess = tostring(properties.publicNetworkAccess),\n         peCount = array_length(properties.privateEndpointConnections),\n         peState = tostring(properties.privateEndpointConnections[0].properties.privateLinkServiceConnectionState.status)\n| project name, type, kind, publicAccess, peCount, peState, location, subscriptionId",
+              "size": 3,
+              "title": "Foundry Private Networking",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "publicAccess",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Disabled",
+                          "representation": "success",
+                          "text": "Disabled"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "warning",
+                          "text": "{0}"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "peState",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Approved",
+                          "representation": "success",
+                          "text": "Approved"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "2",
+                          "text": "{0}"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "sec-001-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-002</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Network Injection</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Foundry account network injection mode (Allow internet / Approved-only outbound).</span></div>"
+            },
+            "name": "sec-002-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.cognitiveservices/accounts' and kind =~ 'AIServices'\n| extend injectionScenarios = tostring(properties.networkInjections),\n         restrictOutbound = tobool(properties.restrictOutboundNetworkAccess),\n         allowedFqdns = array_length(properties.allowedFqdnList)\n| project name, injectionScenarios, restrictOutbound, allowedFqdns, location, subscriptionId",
+              "size": 3,
+              "title": "Network Injection Mode",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No Foundry accounts found.",
+              "noDataMessageStyle": 4
+            },
+            "name": "sec-002-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-003</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Customer-Managed Keys (CMK)</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Foundry accounts encrypted with a customer-managed Key Vault key.</span></div>"
+            },
+            "name": "sec-003-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.cognitiveservices/accounts' and kind =~ 'AIServices'\n| extend cmk = isnotnull(properties.encryption.keyVaultProperties),\n         keyVaultUri = tostring(properties.encryption.keyVaultProperties.keyVaultUri),\n         keyName = tostring(properties.encryption.keyVaultProperties.keyName)\n| project name, cmk, keyVaultUri, keyName, subscriptionId",
+              "size": 3,
+              "title": "CMK Encryption",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "cmk",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "true",
+                          "representation": "success",
+                          "text": "CMK"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "warning",
+                          "text": "MMK"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "sec-003-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-004</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Key Vault Hardening</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Centralized secret management with RBAC, soft delete, purge protection.</span></div>"
+            },
+            "name": "sec-004-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.keyvault/vaults'\n| extend softDelete = properties.enableSoftDelete,\n         purgeProtection = properties.enablePurgeProtection,\n         rbac = properties.enableRbacAuthorization\n| project name, location, subscriptionId, softDelete, purgeProtection, rbac",
+              "size": 3,
+              "title": "Key Vault Security",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "softDelete",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "true",
+                          "representation": "success",
+                          "text": "Yes"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "error",
+                          "text": "No"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "purgeProtection",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "true",
+                          "representation": "success",
+                          "text": "Yes"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "error",
+                          "text": "No"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "columnMatch": "rbac",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "true",
+                          "representation": "success",
+                          "text": "Yes"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "error",
+                          "text": "No"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "sec-004-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-005</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Virtual Networks & Peering</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>VNets, subnets, and peering &#x2014; Foundry network landing zone footprint.</span></div>"
+            },
+            "name": "sec-005-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.network/virtualnetworks'\n| extend addressSpace = tostring(properties.addressSpace.addressPrefixes),\n         subnetCount = array_length(properties.subnets),\n         peeringCount = array_length(properties.virtualNetworkPeerings)\n| project name, addressSpace, subnetCount, peeringCount, location, subscriptionId",
+              "size": 3,
+              "title": "VNet Inventory",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4
+            },
+            "name": "sec-005-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-006</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Network Security Groups</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>NSGs enforcing inbound/outbound traffic policies.</span></div>"
+            },
+            "name": "sec-006-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.network/networksecuritygroups'\n| extend customRules = array_length(properties.securityRules),\n         attachedSubnets = array_length(properties.subnets),\n         attachedNICs = array_length(properties.networkInterfaces)\n| project name, customRules, attachedSubnets, attachedNICs, location, subscriptionId",
+              "size": 3,
+              "title": "NSG Inventory",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4
+            },
+            "name": "sec-006-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-007</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Azure Firewall</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Centralized outbound traffic control and data exfiltration protection.</span></div>"
+            },
+            "name": "sec-007-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.network/azurefirewalls'\n| extend tier = tostring(properties.sku.tier),\n         policy = tostring(properties.firewallPolicy.id)\n| project name, tier, policy, location, subscriptionId",
+              "size": 3,
+              "title": "Azure Firewall",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No Azure Firewall instances found. Required for approved-outbound mode and FQDN egress filtering.",
+              "noDataMessageStyle": 4
+            },
+            "name": "sec-007-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-008</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Web Application Firewall</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>WAF on Application Gateway / Front Door for internet-facing AI workloads.</span></div>"
+            },
+            "name": "sec-008-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.network/applicationgateways'\n    or type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies'\n| extend wafEnabled = case(\n    type == 'microsoft.network/applicationgateways' and isnotnull(properties.webApplicationFirewallConfiguration), true,\n    type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies', true,\n    false),\n   sku = tostring(coalesce(properties.sku.name, sku.name))\n| project name, type, sku, wafEnabled, location, subscriptionId",
+              "size": 3,
+              "title": "WAF Status",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "wafEnabled",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "true",
+                          "representation": "success",
+                          "text": "WAF on"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "warning",
+                          "text": "No WAF"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "sec-008-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-009</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Private DNS Zones for AI Services</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Required for private endpoint name resolution to Foundry / AI Search / OpenAI.</span></div>"
+            },
+            "name": "sec-009-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.network/privatednszones'\n| where name has 'cognitiveservices' or name has 'openai' or name has 'azure-api'\n    or name has 'search.windows' or name has 'documents.azure' or name has 'blob.core'\n    or name has 'vault.azure' or name has 'redis.cache'\n| extend recordCount = toint(properties.numberOfRecordSets),\n         vnetLinks = toint(properties.numberOfVirtualNetworkLinks)\n| project name, recordCount, vnetLinks, subscriptionId\n| order by name asc",
+              "size": 3,
+              "title": "Private DNS Zones (AI)",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No private DNS zones for AI service private endpoints found.",
+              "noDataMessageStyle": 4
+            },
+            "name": "sec-009-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-010</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Azure Bastion</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Secure RDP/SSH access to jumpboxes inside Foundry VNet without public IPs.</span></div>"
+            },
+            "name": "sec-010-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.network/bastionhosts'\n| extend sku = tostring(sku.name)\n| project name, sku, location, subscriptionId",
+              "size": 3,
+              "title": "Bastion Hosts",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4
+            },
+            "name": "sec-010-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-011</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>API Management as AI Gateway</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>APIM for centralized AI API access control, throttling, and auth.</span></div>"
+            },
+            "name": "sec-011-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.apimanagement/service'\n| extend sku = tostring(sku.name),\n         identityType = tostring(identity.type)\n| project name, sku, identityType, location, subscriptionId",
+              "size": 3,
+              "title": "API Management",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4
+            },
+            "name": "sec-011-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-012</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Azure Container Registry</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>ACR for Foundry custom container images and managed online endpoint deployments.</span></div>"
+            },
+            "name": "sec-012-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.containerregistry/registries'\n| extend sku = tostring(sku.name),\n         publicAccess = tostring(properties.publicNetworkAccess),\n         peCount = array_length(properties.privateEndpointConnections)\n| project name, sku, publicAccess, peCount, location, subscriptionId",
+              "size": 3,
+              "title": "Azure Container Registry",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4
+            },
+            "name": "sec-012-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-013</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Defender for Cloud Plans</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Security posture and threat protection plans.</span></div>"
+            },
+            "name": "sec-013-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "securityresources\n| where type == 'microsoft.security/pricings'\n| where name in ('CloudPosture', 'Containers', 'VirtualMachines', 'StorageAccounts', 'Api', 'KeyVaults')\n| project name, tier=tostring(properties.pricingTier)",
+              "size": 3,
+              "title": "Defender Plans",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "tier",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Standard",
+                          "representation": "success",
+                          "text": "Standard"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "warning",
+                          "text": "Free"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "sec-013-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-014</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Defender for AI Services</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Threat protection specifically for AI workloads (prompt injection, model abuse).</span></div>"
+            },
+            "name": "sec-014-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "securityresources\n| where type == 'microsoft.security/pricings'\n| where name == 'AI'\n| project name, tier=tostring(properties.pricingTier)",
+              "size": 3,
+              "title": "Defender for AI",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "tier",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "Standard",
+                          "representation": "success",
+                          "text": "Standard"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "warning",
+                          "text": "Free"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "sec-014-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>SEC-015</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Microsoft Sentinel</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>SIEM/SOAR coverage on Log Analytics workspaces.</span></div>"
+            },
+            "name": "sec-015-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type =~ 'microsoft.operationsmanagement/solutions'\n| where name startswith 'SecurityInsights'\n| extend workspaceId = tostring(properties.workspaceResourceId)\n| project name, workspaceId, location, subscriptionId",
+              "size": 3,
+              "title": "Sentinel Workspaces",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No Microsoft Sentinel deployments found on any Log Analytics workspace.",
+              "noDataMessageStyle": 4
+            },
+            "name": "sec-015-query"
+          }
+        ]
+      },
+      "name": "net-sec-group"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "Policy & Compliance",
+        "expandable": true,
+        "expanded": false,
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Azure Policy enforcement and Defender posture findings against Foundry resources.</div>"
+            },
+            "name": "pol-description"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>POL-001</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Policy Assignments Targeting AI</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Azure Policy assignments referencing Cognitive Services / Foundry / ML scopes.</span></div>"
+            },
+            "name": "pol-001-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "policyresources\n| where type == 'microsoft.authorization/policyassignments'\n| extend displayName = tostring(properties.displayName),\n         scope = tolower(tostring(properties.scope)),\n         policyDefId = tolower(tostring(properties.policyDefinitionId))\n| where displayName contains 'OpenAI' or displayName contains 'AI Services' or displayName contains 'Cognitive'\n    or displayName contains 'Machine Learning' or displayName contains 'AI Search' or displayName contains 'Foundry'\n    or policyDefId contains 'cognitive' or policyDefId contains 'machinelearning' or policyDefId contains 'openai'\n    or policyDefId contains 'enforce-guardrails'\n| project displayName, scope, subscriptionId",
+              "size": 3,
+              "title": "AI Policy Assignments",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No AI-specific Azure Policy assignments detected. Apply Enforce-Guardrails initiatives for OpenAI / Machine Learning / Cognitive Services.",
+              "noDataMessageStyle": 4
+            },
+            "name": "pol-001-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>POL-002</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Policy Compliance State</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Non-compliant policy states across the subscription.</span></div>"
+            },
+            "name": "pol-002-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "policyresources\n| where type == 'microsoft.policyinsights/policystates'\n| summarize total=count(), nonCompliant=countif(properties.complianceState=='NonCompliant') by tostring(properties.policyAssignmentName)\n| where nonCompliant > 0\n| order by nonCompliant desc\n| top 25 by nonCompliant",
+              "size": 3,
+              "title": "Policy Compliance",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No non-compliant policy states found (or policyinsights data not yet available).",
+              "noDataMessageStyle": 4
+            },
+            "name": "pol-002-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>POL-003</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Defender Recommendations on AI</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Open Defender for Cloud recommendations targeting Foundry / Cognitive Services / ML / Search.</span></div>"
+            },
+            "name": "pol-003-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "securityresources\n| where type =~ 'microsoft.security/assessments'\n| extend status = tostring(properties.status.code),\n         resourceId = tolower(tostring(properties.resourceDetails.id)),\n         displayName = tostring(properties.displayName),\n         severity = tostring(properties.metadata.severity)\n| where resourceId contains 'cognitiveservices' or resourceId contains 'machinelearning'\n    or resourceId contains 'searchservices' or resourceId contains 'apimanagement'\n| where status != 'Healthy'\n| summarize Count=count() by displayName, severity\n| order by Count desc",
+              "size": 3,
+              "title": "Defender AI Recommendations",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No open Defender recommendations on AI resources (or Defender plans are not enabled).",
+              "noDataMessageStyle": 4
+            },
+            "name": "pol-003-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>POL-004</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Compliance Manager State</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Microsoft Purview Compliance Manager assessment scores.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Compliance Manager scores live in Microsoft Purview / Microsoft 365 admin center, not in Azure Resource Graph. Review at <code>https://compliance.microsoft.com/compliancemanager</code> and align AI workloads to relevant assessments (ISO/IEC 23053, NIST AI RMF, EU AI Act, HIPAA, etc.).</div>"
+            },
+            "name": "pol-004-header"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>POL-005</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Regulatory Compliance Initiatives</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; ISO/IEC 23053:2022, NIST AI RMF, EU AI Act alignment.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Apply the regulatory compliance initiatives in Azure Policy for your industry. Available at: <code>Microsoft.Authorization/policySetDefinitions</code> with category 'Regulatory Compliance'.</div>"
+            },
+            "name": "pol-005-header"
+          }
+        ]
+      },
+      "name": "pol-group"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "Cost & Operations",
+        "expandable": true,
+        "expanded": false,
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:8px 0;font-size:12px;color:#605e5c'>Operational resilience and cost-related signals: regional distribution, agent execution isolation, and manual callouts for quotas / PTUs / budgets.</div>"
+            },
+            "name": "ops-description"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>OPS-001</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Multi-Region Presence</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Foundry accounts deployed across multiple regions for BCDR.</span></div>"
+            },
+            "name": "ops-001-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.cognitiveservices/accounts' and kind =~ 'AIServices'\n| summarize accountCount = count() by location\n| order by accountCount desc",
+              "size": 3,
+              "title": "Foundry Regions",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4
+            },
+            "name": "ops-001-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>OPS-002</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Container Apps Dynamic Sessions</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Isolated, ephemeral execution environments for AI agent code execution.</span></div>"
+            },
+            "name": "ops-002-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type =~ 'microsoft.app/sessionpools'\n| extend containerType = tostring(properties.containerType),\n         poolMgmtType = tostring(properties.poolManagementType)\n| project name, containerType, poolMgmtType, location, subscriptionId",
+              "size": 3,
+              "title": "Container Apps Session Pools",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No Container Apps session pools found. Use Dynamic Sessions for sandboxed agent code execution.",
+              "noDataMessageStyle": 4
+            },
+            "name": "ops-002-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>OPS-003</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Quotas & PTU Usage</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Provisioned Throughput Units and rate limits.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Quota and PTU usage are exposed via the Cognitive Services usage REST API:<br/><code>GET https://management.azure.com/subscriptions/{sub}/providers/Microsoft.CognitiveServices/locations/{region}/usages?api-version=2024-10-01</code></div>"
+            },
+            "name": "ops-003-header"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>OPS-004</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Cost Tracking & Budgets</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Subscription / resource group budgets and AI cost allocation.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Cost data is exposed via the Cost Management API:<br/><code>GET https://management.azure.com/subscriptions/{sub}/providers/Microsoft.Consumption/budgets?api-version=2023-05-01</code><br/>Generative AI Gateway capabilities in APIM can track per-client token spend.</div>"
+            },
+            "name": "ops-004-header"
+          }
+        ]
+      },
+      "name": "ops-group"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "Monitoring & Operations",
+        "expandable": true,
+        "expanded": false,
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>MON-001</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Application Insights</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>APM / tracing for Foundry-backed applications and agents.</span></div>"
+            },
+            "name": "mon-001-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.insights/components'\n| project name, applicationId=properties.ApplicationId, ingestionMode=properties.IngestionMode, subscriptionId",
+              "size": 3,
+              "title": "Application Insights",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4
+            },
+            "name": "mon-001-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>MON-002</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Diagnostics Coverage</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Diagnostic settings on Foundry accounts.</span></div>"
+            },
+            "name": "mon-002-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.cognitiveservices/accounts' and kind =~ 'AIServices'\n| project resourceName=name, resourceId=id, subscriptionId\n| join kind=leftouter (\n    resources\n    | where type == 'microsoft.insights/diagnosticsettings'\n    | extend targetId = tostring(split(id, '/providers/microsoft.insights')[0])\n    | project targetId, diagName=name, workspaceId=properties.workspaceId\n) on $left.resourceId == $right.targetId\n| summarize Total=count(), WithDiagnostics=countif(isnotnull(diagName))",
+              "size": 3,
+              "title": "Foundry Diagnostics",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "WithDiagnostics",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "palette": "greenRed"
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "mon-002-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>MON-003</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Metric Alert Rules</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Metric alerts targeting Foundry / Cognitive Services.</span></div>"
+            },
+            "name": "mon-003-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where type == 'microsoft.insights/metricalerts'\n| where properties.scopes has 'microsoft.cognitiveservices'\n| extend severity = toint(properties.severity), enabled = tobool(properties.enabled)\n| project name, severity, enabled, location, subscriptionId",
+              "size": 3,
+              "title": "Foundry Metric Alerts",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "enabled",
+                    "formatter": 18,
+                    "formatOptions": {
+                      "thresholdsOptions": "icons",
+                      "thresholdsGrid": [
+                        {
+                          "operator": "==",
+                          "thresholdValue": "true",
+                          "representation": "success",
+                          "text": "Enabled"
+                        },
+                        {
+                          "operator": "Default",
+                          "representation": "warning",
+                          "text": "Disabled"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "mon-003-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>MON-004</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Log Analytics Workspace Routing</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Foundry / AI Search resources sending diagnostics to a workspace.</span></div>"
+            },
+            "name": "mon-004-header"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "resources\n| where (type == 'microsoft.cognitiveservices/accounts' and kind =~ 'AIServices')\n    or type == 'microsoft.search/searchservices'\n| project resourceId=id, resourceName=name, type, subscriptionId\n| join kind=leftouter (\n    resources\n    | where type == 'microsoft.insights/diagnosticsettings'\n    | extend targetId = tostring(split(id, '/providers/microsoft.insights')[0])\n    | project targetId, workspaceId=tostring(properties.workspaceId)\n) on $left.resourceId == $right.targetId\n| extend hasWorkspace = isnotnull(workspaceId)\n| summarize Total=count(), RoutingToWorkspace=countif(hasWorkspace == true) by type",
+              "size": 3,
+              "title": "LAW Coverage",
+              "queryType": 1,
+              "resourceType": "microsoft.resourcegraph/resources",
+              "crossComponentResources": [
+                "{Subscription}"
+              ],
+              "visualization": "table",
+              "noDataMessage": "No resources found in the selected subscription(s).",
+              "noDataMessageStyle": 4,
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "RoutingToWorkspace",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "palette": "greenRed"
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "mon-004-query"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>MON-005</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Foundry Quality Evaluators</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Groundedness, relevance, coherence, fluency evaluators on Foundry agents.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> Use Foundry data plane API:<br/><code>GET https://{account}.services.ai.azure.com/api/projects/{project}/evaluations?api-version=2025-05-01</code></div>"
+            },
+            "name": "mon-005-header"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "<div style='margin:16px 0 4px 0;border-bottom:1px solid #edebe9;padding-bottom:4px'><span style='font-size:11px;font-weight:600;color:#0078d4;text-transform:uppercase;letter-spacing:.5px'>MON-006</span>&nbsp;&nbsp;<span style='font-size:14px;font-weight:600;color:#323130'>Continuous / Online Evaluation</span><span style='font-size:12px;color:#605e5c;margin-left:8px'>Manual/API &#x2014; Production-time evaluation runs on Foundry deployments.</span></div><div style='margin:4px 0 8px 0;padding:8px 12px;background:#fff4ce;border-left:3px solid #ffb900;border-radius:3px;font-size:12px;color:#323130'><strong>&#x26A0; Manual Check Required:</strong> <code>GET https://{account}.services.ai.azure.com/api/projects/{project}/evaluations/runs?api-version=2025-05-01</code></div>"
+            },
+            "name": "mon-006-header"
+          }
+        ]
+      },
+      "name": "mon-group"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "<div style='margin-top:24px;padding:12px 16px;background:#f3f2f1;border-radius:4px;font-size:12px;color:#605e5c;display:flex;justify-content:center;align-items:center;gap:6px'><a href='https://github.com/Azure/ai-readiness-assessment' style='color:#24292f;text-decoration:none;display:flex;align-items:center;gap:6px'><svg height='16' width='16' viewBox='0 0 16 16' fill='#24292f'><path d='M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z'/></svg>View on GitHub</a></div>"
+      },
+      "name": "footer"
+    }
+  ],
+  "fallbackResourceIds": [
+    "Azure Monitor"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
