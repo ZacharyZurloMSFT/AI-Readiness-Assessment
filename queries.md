@@ -33,8 +33,8 @@ All queries executed by the AI Platform Readiness Assessment workbook. This file
 |----------|-----------|------|-------------|
 | RCE-001 | AI Search | ARG | Azure AI Search &#x2014; Semantic and vector search capabilities. |
 | RCE-002 | Redis Cache | ARG | Azure Cache for Redis &#x2014; Semantic / response caching. |
-| RCE-003 | Cosmos DB / PostgreSQL | ARG | Vector-capable databases for RAG patterns. |
-| RCE-004 | Vector Stores | ARG | All vector-capable stores: AI Search, Cosmos DB, PostgreSQL. |
+| RCE-003 | Cosmos DB / PostgreSQL | ARG | Databases used for retrieval-augmented generation patterns. |
+| RCE-004 | Vector Stores | ARG | Vector store inventory: AI Search, Cosmos DB with vector search enabled, and PostgreSQL candidates for pgvector. |
 | RCE-005 | Document Intelligence | ARG | Azure AI Document Intelligence &#x2014; OCR / document processing. |
 
 ## Responsible AI
@@ -85,9 +85,9 @@ All queries executed by the AI Platform Readiness Assessment workbook. This file
 
 | Query ID | Query Name | Type | Description |
 |----------|-----------|------|-------------|
-| POL-001 | Policy Assignments Targeting AI | ARG | Azure Policy assignments referencing Cognitive Services / Foundry / ML scopes. |
+| POL-001 | Policy Assignments Targeting AI | ARG | Azure Policy assignments referencing Cognitive Services / Foundry / AI Search scopes. |
 | POL-002 | Policy Compliance State | ARG | Non-compliant policy states across the subscription. |
-| POL-003 | Defender Recommendations on AI | ARG | Open Defender for Cloud recommendations targeting Foundry / Cognitive Services / ML / Search. |
+| POL-003 | Defender Recommendations on AI | ARG | Open Defender for Cloud recommendations targeting Foundry / Cognitive Services / Search. |
 | POL-004 | Compliance Manager State | Manual/API | Microsoft Purview Compliance Manager assessment scores. |
 | POL-005 | Regulatory Compliance Initiatives | Manual/API | ISO/IEC 23053:2022, NIST AI RMF, EU AI Act alignment. |
 

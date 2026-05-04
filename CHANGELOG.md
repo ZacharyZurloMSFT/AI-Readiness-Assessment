@@ -21,18 +21,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - **Responsible AI pillar refocused on Foundry guardrails** — Lead query is now `RAI-001 Foundry Guardrail Policies` (custom `raiPolicies` on Foundry accounts). The standalone Content Safety service has been demoted to an informational query (`RAI-007`) and is no longer scored. Score signals are now: `+2` for any Foundry account (Microsoft.Default policy applies automatically) and `+3` for any custom guardrail policy.
-- **Foundry-only scope** — Workbook now exclusively assesses Microsoft Foundry (`microsoft.cognitiveservices/accounts` with `kind = AIServices`). Standalone Azure OpenAI accounts and classic AI Hub workspaces (`microsoft.machinelearningservices/workspaces`) are no longer included in any score signal
+- **Foundry-only scope** — Workbook now exclusively assesses Microsoft Foundry (`microsoft.cognitiveservices/accounts` with `kind = AIServices`). Standalone Azure OpenAI account signals are no longer included in any score signal
 - **Pillar count: 6 → 9** — Reorganised into Foundry Inventory, Data Management & Governance, Retrieval & Context Enablement, Responsible AI, Identity & Access, Network & Security, Policy & Compliance, Cost & Operations, Monitoring & Operations
 - **Total queries: 39 → 62** (47 ARG + 15 Manual/API)
 - **Maximum score: 36 → 55** with rebalanced pillar weights aligned to the Azure AI Landing Zone
-- **Score signals** — Removed standalone OpenAI, ML Workspace, and GPU compute signals; added Foundry capability host, Foundry project identity, Foundry connection, network injection, CMK, Private DNS, Firewall, WAF, and Bastion signals
+- **Score signals** — Removed standalone OpenAI and legacy model-management compute signals; added Foundry capability host, Foundry project identity, Foundry connection, network injection, CMK, Private DNS, Firewall, WAF, and Bastion signals
 - **MDL-001..008 removed** — Model-related queries consolidated into the Foundry Inventory pillar; deployment-level signals (deployment list, fine-tuned models, online endpoints, deployment-bound RAI policies, multi-region model failover) are surfaced as manual REST callouts because `microsoft.cognitiveservices/accounts/deployments` is not reliably indexed by Azure Resource Graph
 
 ### Removed
 
-- **MDL-002 ML Workspaces** and **MDL-003 GPU Compute** — Out of scope for Foundry-aligned assessment
+- **Legacy model-management workspace and compute checks** — Out of scope for Foundry-aligned assessment
 - **Standalone OpenAI signal** — Score now requires `kind=AIServices` (Microsoft Foundry)
-- **AI Search `vectorCapable` flag** — All current AI Search SKUs (including `free` and `basic`) support vector search; the legacy SKU-based heuristic was producing false negatives
+- **AI Search SKU heuristic** — All current AI Search SKUs (including `free` and `basic`) support vector search; the legacy SKU-based heuristic was producing false negatives
 
 ## [1.1.0] - 2026-04-03
 
@@ -67,8 +67,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Initial release with 36 assessment queries across 6 pillars
 - **Data Management & Governance (8 queries)**: Purview accounts, scan rulesets, data classification, lineage, Databricks Unity Catalog, ADF ETL, Lakehouse (ADLS/Databricks/Fabric), retention policies
-- **Retrieval & Context Enablement (5 queries)**: AI Search (with vector capability), Redis Cache, Cosmos DB / PostgreSQL, vector stores inventory, Document Intelligence
-- **Model Management (8 queries)**: Azure OpenAI / AI Services, ML workspaces, GPU compute, Microsoft Foundry projects, online endpoints, model deployments, fine-tuned models, evaluation runs
+- **Retrieval & Context Enablement (5 queries)**: AI Search, Redis Cache, Cosmos DB / PostgreSQL, vector stores inventory, Document Intelligence
+- **Model Management (8 queries)**: Azure OpenAI / AI Services, Microsoft Foundry projects, online endpoints, model deployments, fine-tuned models, evaluation runs
 - **Responsible AI (3 queries)**: Content Safety (ARG), safety evaluators (Manual/API), red teaming runs (Manual/API)
 - **Security & Compliance (7 queries)**: Managed identities, Key Vault, private networking, Defender for Cloud, Defender for AI, model API authentication, APIM as AI gateway
 - **Monitoring & Operations (5 queries)**: Application Insights, AI services diagnostics, metric alerts, Log Analytics workspace coverage, quality evaluators (Manual/API)

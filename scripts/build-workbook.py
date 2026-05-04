@@ -2,9 +2,8 @@
 """
 Generates workbook/ai-readiness-assessment.workbook from a structured definition.
 
-Scope: Microsoft Foundry only (kind=AIServices). Excludes standalone Azure OpenAI,
-classic AI Hub workspaces (microsoft.machinelearningservices/workspaces), and
-generic Cognitive Services accounts other than ContentSafety / Document Intelligence
+Scope: Microsoft Foundry only (kind=AIServices). Excludes standalone Azure OpenAI
+and generic Cognitive Services accounts other than ContentSafety / Document Intelligence,
 which are explicitly assessed.
 """
 from __future__ import annotations
@@ -468,7 +467,7 @@ def rce_group() -> dict:
 | project name, sku, capacity, location, subscriptionId"""),
 
         query_header("RCE-003", "Cosmos DB / PostgreSQL",
-                     "Vector-capable databases for RAG patterns."),
+                     "Databases used for retrieval-augmented generation patterns."),
         arg_query("RCE-003", "Cosmos DB / PostgreSQL",
                   """resources
 | where type == 'microsoft.documentdb/databaseaccounts'
@@ -477,13 +476,16 @@ def rce_group() -> dict:
     type == 'microsoft.documentdb/databaseaccounts', 'Cosmos DB',
     type == 'microsoft.dbforpostgresql/flexibleservers', 'PostgreSQL Flexible',
     'Other')
-| extend vectorSearch = properties.capabilities has 'EnableNoSQLVectorSearch'
-| project name, dbKind, vectorSearch, location, subscriptionId""",
-                  formatters=[threshold_icon_formatter("vectorSearch", "true",
-                                                       success_text="Enabled", default_text="Not Enabled")]),
+| extend cosmosVectorEnabled = properties.capabilities has 'EnableNoSQLVectorSearch'
+| extend vectorStatus = case(
+    type == 'microsoft.documentdb/databaseaccounts' and cosmosVectorEnabled, 'NoSQL vector search enabled',
+    type == 'microsoft.documentdb/databaseaccounts', 'NoSQL vector search not enabled',
+    type == 'microsoft.dbforpostgresql/flexibleservers', 'Verify pgvector extension in database',
+    'Unknown')
+| project name, dbKind, vectorStatus, location, subscriptionId"""),
 
         query_header("RCE-004", "Vector Stores",
-                     "All vector-capable stores: AI Search, Cosmos DB, PostgreSQL."),
+                     "Vector store inventory: AI Search, Cosmos DB with vector search enabled, and PostgreSQL candidates for pgvector."),
         arg_query("RCE-004", "Vector Stores",
                   """resources
 | where type == 'microsoft.search/searchservices'
@@ -494,7 +496,12 @@ def rce_group() -> dict:
     type == 'microsoft.documentdb/databaseaccounts', 'Cosmos DB (vector)',
     type == 'microsoft.dbforpostgresql/flexibleservers', 'PostgreSQL (pgvector)',
     'Other')
-| project name, storeType, location, subscriptionId"""),
+| extend vectorStatus = case(
+    type == 'microsoft.search/searchservices', 'Native vector search',
+    type == 'microsoft.documentdb/databaseaccounts', 'NoSQL vector search enabled',
+    type == 'microsoft.dbforpostgresql/flexibleservers', 'Verify pgvector extension in database',
+    'Unknown')
+| project name, storeType, vectorStatus, location, subscriptionId"""),
 
         query_header("RCE-005", "Document Intelligence",
                      "Azure AI Document Intelligence &#x2014; OCR / document processing."),
@@ -879,7 +886,7 @@ def policy_compliance_group() -> dict:
             "pol-description"),
 
         query_header("POL-001", "Policy Assignments Targeting AI",
-                     "Azure Policy assignments referencing Cognitive Services / Foundry / ML scopes."),
+                     "Azure Policy assignments referencing Cognitive Services / Foundry / AI Search scopes."),
         arg_query("POL-001", "AI Policy Assignments",
                   """policyresources
 | where type == 'microsoft.authorization/policyassignments'
@@ -887,11 +894,11 @@ def policy_compliance_group() -> dict:
          scope = tolower(tostring(properties.scope)),
          policyDefId = tolower(tostring(properties.policyDefinitionId))
 | where displayName contains 'OpenAI' or displayName contains 'AI Services' or displayName contains 'Cognitive'
-    or displayName contains 'Machine Learning' or displayName contains 'AI Search' or displayName contains 'Foundry'
-    or policyDefId contains 'cognitive' or policyDefId contains 'machinelearning' or policyDefId contains 'openai'
+    or displayName contains 'AI Search' or displayName contains 'Foundry'
+    or policyDefId contains 'cognitive' or policyDefId contains 'openai'
     or policyDefId contains 'enforce-guardrails'
 | project displayName, scope, subscriptionId""",
-                  no_data="No AI-specific Azure Policy assignments detected. Apply Enforce-Guardrails initiatives for OpenAI / Machine Learning / Cognitive Services."),
+                  no_data="No AI-specific Azure Policy assignments detected. Apply Enforce-Guardrails initiatives for OpenAI / Cognitive Services."),
 
         query_header("POL-002", "Policy Compliance State",
                      "Non-compliant policy states across the subscription."),
@@ -905,7 +912,7 @@ def policy_compliance_group() -> dict:
                   no_data="No non-compliant policy states found (or policyinsights data not yet available)."),
 
         query_header("POL-003", "Defender Recommendations on AI",
-                     "Open Defender for Cloud recommendations targeting Foundry / Cognitive Services / ML / Search."),
+                     "Open Defender for Cloud recommendations targeting Foundry / Cognitive Services / Search."),
         arg_query("POL-003", "Defender AI Recommendations",
                   """securityresources
 | where type =~ 'microsoft.security/assessments'
@@ -913,7 +920,7 @@ def policy_compliance_group() -> dict:
          resourceId = tolower(tostring(properties.resourceDetails.id)),
          displayName = tostring(properties.displayName),
          severity = tostring(properties.metadata.severity)
-| where resourceId contains 'cognitiveservices' or resourceId contains 'machinelearning'
+| where resourceId contains 'cognitiveservices'
     or resourceId contains 'searchservices' or resourceId contains 'apimanagement'
 | where status != 'Healthy'
 | summarize Count=count() by displayName, severity

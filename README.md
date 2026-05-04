@@ -9,7 +9,7 @@ Assess your Azure environment's readiness for **Microsoft Foundry**-based AI wor
 
 Some data-plane signals (agents, evaluation runs, threads, Conditional Access, MFA, PIM, quota/PTU usage, budgets) are **not exposed via Azure Resource Graph** and are surfaced as Manual/API checks with the exact REST call documented in the workbook.
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkrishna-sunkavalli%2Fai-platform-readiness-assessment%2Fmain%2Fworkbook%2Fazuredeploy.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FZacharyZurloMSFT%2FAI-Readiness-Assessment%2Fmain%2Fworkbook%2Fazuredeploy.json)
 
 <!-- TODO: Add screenshot — save as docs/screenshot.png -->
 
