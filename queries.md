@@ -2,7 +2,7 @@
 
 All queries executed by the AI Platform Readiness Assessment workbook. This file is auto-generated from the workbook source by `scripts/build-workbook.py`.
 
-**Total: 62 queries** (48 ARG, 14 Manual/API).
+**Total: 61 queries** (47 ARG, 14 Manual/API).
 
 ## Foundry Inventory
 
@@ -11,7 +11,7 @@ All queries executed by the AI Platform Readiness Assessment workbook. This file
 | FDY-001 | Foundry Accounts | ARG | Microsoft Foundry account inventory with identity, network, encryption, and auth configuration. |
 | FDY-002 | Foundry Projects | ARG | Projects organize models, data, agents, and evaluations within a Foundry account. |
 | FDY-003 | Foundry Connections | ARG | Connections wire Foundry projects to AI Search, Storage, Cosmos, OpenAI, Bing, and other resources. |
-| FDY-004 | Capability Hosts (Agent Service) | ARG | Capability hosts indicate Foundry Agent Service is configured (storage + thread + vector store wiring). |
+| FDY-004 | Capability Hosts (Agent Service) | ARG | Capability hosts indicate Foundry Agent Service is configured (Standard tier only &#x2014; storage + thread + vector store wiring). |
 | FDY-005 | Model Deployments, Agents, Evaluations, Threads | Manual/API | Foundry deployments and data-plane resources are not reliably exposed to Azure Resource Graph. |
 
 ## Data Management & Governance
@@ -47,7 +47,6 @@ All queries executed by the AI Platform Readiness Assessment workbook. This file
 | RAI-004 | Per-Deployment Guardrail Assignment | Manual/API | Verify which guardrail policy is bound to each model deployment and agent. |
 | RAI-005 | Guardrail Policy Controls Detail | Manual/API | Inspect the actual risks, severity thresholds, and intervention points configured on each custom policy. |
 | RAI-006 | Red Teaming Runs | Manual/API | Check for completed red teaming runs and Attack Success Rate (ASR) metrics. |
-| RAI-007 | Standalone Content Safety Services | ARG | Dedicated Content Safety service instances &#x2014; informational only; Foundry guardrails are the primary control plane. |
 
 ## Identity & Access
 

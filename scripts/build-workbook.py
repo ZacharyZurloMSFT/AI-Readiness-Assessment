@@ -146,7 +146,6 @@ SIGNAL_AGG = """resources
     fproject_id=countif(type=~'microsoft.cognitiveservices/accounts/projects' and isnotnull(identity.principalId)),
     capability_host=countif(type=~'microsoft.cognitiveservices/accounts/capabilityhosts' or type=~'microsoft.cognitiveservices/accounts/projects/capabilityhosts'),
     fconnection=countif(type=~'microsoft.cognitiveservices/accounts/connections' or type=~'microsoft.cognitiveservices/accounts/projects/connections'),
-    contentsafety=countif(type=='microsoft.cognitiveservices/accounts' and kind=~'ContentSafety'),
     custom_rai=countif(type=~'microsoft.cognitiveservices/accounts/raipolicies'),
     keyvault=countif(type=='microsoft.keyvault/vaults'),
     kv_hardened=countif(type=='microsoft.keyvault/vaults' and tobool(properties.enableRbacAuthorization)==true and tobool(properties.enableSoftDelete)==true and tobool(properties.enablePurgeProtection)==true),
@@ -271,10 +270,10 @@ def foundry_inventory_group() -> dict:
          authType = tostring(properties.authType)
 | project name, category, target, authType, subscriptionId
 | order by category asc, name asc""",
-                  no_data="No Foundry connections found. Connections are required for RAG, agent tools, and external data integration."),
+                  no_data="No Foundry connections indexed in Azure Resource Graph. NextGen Foundry project connections are not reliably exposed in ARG. Verify connections in the Foundry portal or via: GET https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}/projects/{project}/connections?api-version=2025-05-15-preview"),
 
         query_header("FDY-004", "Capability Hosts (Agent Service)",
-                     "Capability hosts indicate Foundry Agent Service is configured (storage + thread + vector store wiring)."),
+                     "Capability hosts indicate Foundry Agent Service is configured (Standard tier only &#x2014; storage + thread + vector store wiring)."),
         arg_query("FDY-004", "Capability Hosts",
                   """resources
 | where type =~ 'microsoft.cognitiveservices/accounts/capabilityhosts'
@@ -285,7 +284,7 @@ def foundry_inventory_group() -> dict:
          capabilityKind = tostring(properties.capabilityHostKind),
          provisioningState = tostring(properties.provisioningState)
 | project name, capabilityKind, provisioningState, storageConn, vectorStoreConn, threadConn, subscriptionId""",
-                  no_data="No capability hosts found. Foundry Agent Service has not been configured for any project."),
+                  no_data="No capability hosts found. Capability hosts are provisioned on Standard tier Foundry deployments only. If you are on the Basic tier, agents still function but without explicit capability host resources &#x2014; this result is expected for Basic tier deployments."),
 
         manual_callout("FDY-005", "Model Deployments, Agents, Evaluations, Threads",
                        "Foundry deployments and data-plane resources are not reliably exposed to Azure Resource Graph.",
@@ -315,7 +314,7 @@ def landscape_group() -> dict:
     'microsoft.insights/components'
   )
 | where type !~ 'microsoft.cognitiveservices/accounts'
-    or kind in~ ('AIServices','ContentSafety','FormRecognizer','DocumentIntelligence')
+    or kind in~ ('AIServices','FormRecognizer','DocumentIntelligence')
 | summarize resourceCount = count() by location
 | order by resourceCount desc"""
 
@@ -521,7 +520,7 @@ def rai_group() -> dict:
             "<div style='margin:8px 0;font-size:12px;color:#605e5c'>"
             "Microsoft Foundry guardrails are <strong>RAI policies</strong> that wrap every model deployment and agent. Every Foundry deployment automatically inherits the built-in <code>Microsoft.Default</code> policy "
             "(Hate, Sexual, Self-Harm, Violence at medium severity, plus Jailbreak and Indirect-Attack shields). Custom policies layer additional controls "
-            "(Protected Material, Groundedness, Custom Categories, etc.) and tighter severity thresholds. This pillar checks that those Foundry-native guardrails are present and customised; the standalone Content Safety service is shown for reference only."
+            "(Protected Material, Groundedness, Custom Categories, etc.) and tighter severity thresholds. This pillar checks that those Foundry-native guardrails are present and customised."
             "</div>",
             "rai-description"),
 
@@ -536,7 +535,7 @@ def rai_group() -> dict:
          policyType = tostring(properties.type)
 | project parentAccount, policyName=name, mode, basePolicyName, policyType, subscriptionId
 | order by parentAccount asc, policyName asc""",
-                  no_data="No custom guardrail policies found. All Foundry deployments are using the built-in Microsoft.Default policy only. Consider adding custom policies to enforce Protected Material, Groundedness, or Custom Categories."),
+                  no_data="No custom guardrail policies indexed in Azure Resource Graph. RAI policies may not be reliably exposed in ARG for all NextGen Foundry configurations. Verify via: GET https://management.azure.com/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}/raiPolicies?api-version=2024-10-01"),
 
         query_header("RAI-002", "Foundry Content Filter Capability",
                      "Foundry accounts with the RaiMonitor capability available (required for guardrail enforcement at runtime)."),
@@ -603,16 +602,6 @@ def rai_group() -> dict:
                        "Check for completed red teaming runs and Attack Success Rate (ASR) metrics.",
                        "Use Foundry portal or API to verify red teaming runs.<br/>"
                        "<code>GET https://{account}.services.ai.azure.com/api/projects/{project}/redteams/runs?api-version=2025-05-01</code>"),
-
-        query_header("RAI-007", "Standalone Content Safety Services",
-                     "Dedicated Content Safety service instances &#x2014; informational only; Foundry guardrails are the primary control plane."),
-        arg_query("RAI-007", "Standalone Content Safety",
-                  """resources
-| where type =~ 'microsoft.cognitiveservices/accounts'
-| where kind =~ 'ContentSafety'
-| extend sku = tostring(sku.name), publicAccess = tostring(properties.publicNetworkAccess)
-| project name, sku, publicAccess, location, resourceGroup, subscriptionId""",
-                  no_data="No standalone Content Safety services found. This is expected when Foundry guardrails are used; the Foundry-embedded Content Safety capability covers the same features."),
     ]
     return group_section("Responsible AI", items, name="rai-group")
 
@@ -707,7 +696,7 @@ def network_security_group() -> dict:
                      "Public access and private endpoint state on Foundry accounts and AI Search."),
         arg_query("SEC-001", "Foundry Private Networking",
                   """resources
-| where (type == 'microsoft.cognitiveservices/accounts' and kind in~ ('AIServices','ContentSafety','FormRecognizer','DocumentIntelligence'))
+| where (type == 'microsoft.cognitiveservices/accounts' and kind in~ ('AIServices','FormRecognizer','DocumentIntelligence'))
     or type == 'microsoft.search/searchservices'
     or type == 'microsoft.storage/storageaccounts'
     or type == 'microsoft.cache/redis'
